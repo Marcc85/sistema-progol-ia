@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------------------------------------
-# 0. ESTILOS VISUALES RESPONSIVOS (PC, IPHONE Y ANDROID)
+# 0. ESTILOS VISUALES RESPONSIVOS Y FORMATO DE IMPRESIÓN LIMPIO
 # ------------------------------------------------------------------------------
 st.markdown(
     """
@@ -49,6 +49,16 @@ st.markdown(
         [data-testid="stDataFrame"] {
             width: 100% !important;
             overflow-x: auto !important;
+        }
+        /* Formato limpio de impresión */
+        @media print {
+            header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], div.stButton, .no-print {
+                display: none !important;
+            }
+            .block-container {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
         }
     </style>
     """,
@@ -108,7 +118,10 @@ TABLA_EN_BLANCO = [
         "Visita": "",
         "Momio Local": "",
         "Momio Empate": "",
-        "Momio Visitante": ""
+        "Momio Visitante": "",
+        "Apertura Local": "",
+        "Apertura Empate": "",
+        "Apertura Visitante": ""
     }
     for i in range(14)
 ]
@@ -195,8 +208,10 @@ def cargar_disco():
                 data = json.load(f)
                 if isinstance(data, list) and len(data) == 14:
                     for item in data:
-                        if "Liga" not in item:
-                            item["Liga"] = "Liga MX"
+                        if "Liga" not in item: item["Liga"] = "Liga MX"
+                        if "Apertura Local" not in item: item["Apertura Local"] = ""
+                        if "Apertura Empate" not in item: item["Apertura Empate"] = ""
+                        if "Apertura Visitante" not in item: item["Apertura Visitante"] = ""
                     return data
         except Exception:
             pass
@@ -709,7 +724,7 @@ def detectar_datos_duros(info_l, info_v, df_f1, df_f2, df_h2h):
     return insights
 
 # ------------------------------------------------------------------------------
-# 4. FÓRMULAS DE PROBABILIDAD Y CORRECCIÓN DIXON-COLES
+# 4. FÓRMULAS DE PROBABILIDAD, SMART MONEY Y CORRECCIÓN DIXON-COLES
 # ------------------------------------------------------------------------------
 def limpiar_y_convertir_momio(val):
     if val is None: return None
@@ -777,16 +792,25 @@ def procesar_fila_independiente(row):
     me_raw = row.get("Momio Empate")
     mv_raw = row.get("Momio Visitante")
 
+    # Momios de Apertura (Lunes)
+    o_l_raw = row.get("Apertura Local")
+    o_e_raw = row.get("Apertura Empate")
+    o_v_raw = row.get("Apertura Visitante")
+
     ml_clean = limpiar_y_convertir_momio(ml_raw)
     me_clean = limpiar_y_convertir_momio(me_raw)
     mv_clean = limpiar_y_convertir_momio(mv_raw)
+
+    o_l_clean = limpiar_y_convertir_momio(o_l_raw)
+    o_e_clean = limpiar_y_convertir_momio(o_e_raw)
+    o_v_clean = limpiar_y_convertir_momio(o_v_raw)
 
     if not loc and not vis:
         return {
             "#": num, "Liga": liga, "Partido": f"Partido #{num}",
             "Momio Local": "", "Momio Empate": "", "Momio Visitante": "",
             "Prob. Local (%)": "-", "Prob. Empate (%)": "-", "Prob. Visitante (%)": "-",
-            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Clasificación Partido": "EN ESPERA"
+            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
         }
 
     if ml_clean is None or me_clean is None or mv_clean is None:
@@ -795,7 +819,7 @@ def procesar_fila_independiente(row):
             "Momio Local": ml_raw if ml_raw else "", "Momio Empate": me_raw if me_raw else "",
             "Momio Visitante": mv_raw if mv_raw else "",
             "Prob. Local (%)": "-", "Prob. Empate (%)": "-", "Prob. Visitante (%)": "-",
-            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Clasificación Partido": "EN ESPERA"
+            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
         }
 
     pl = calcular_probabilidad_excel(ml_clean)
@@ -816,8 +840,31 @@ def procesar_fila_independiente(row):
             "#": num, "Liga": liga, "Partido": f"{loc} vs {vis}",
             "Momio Local": ml_raw or "", "Momio Empate": me_raw or "", "Momio Visitante": mv_raw or "",
             "Prob. Local (%)": "-", "Prob. Empate (%)": "-", "Prob. Visitante (%)": "-",
-            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Clasificación Partido": "EN ESPERA"
+            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
         }
+
+    # Detección cuantitativa de Smart Money
+    smart_money_str = "Estable"
+    if o_l_clean is not None and o_e_clean is not None and o_v_clean is not None:
+        p_ol = calcular_probabilidad_excel(o_l_clean)
+        p_oe = calcular_probabilidad_excel(o_e_clean)
+        p_ov = calcular_probabilidad_excel(o_v_clean)
+        sum_o = p_ol + p_oe + p_ov
+        if sum_o > 0:
+            p_ol_n = (p_ol / sum_o) * 100.0
+            p_oe_n = (p_oe / sum_o) * 100.0
+            p_ov_n = (p_ov / sum_o) * 100.0
+            
+            diff_l = pl_n - p_ol_n
+            diff_e = pe_n - p_oe_n
+            diff_v = pv_n - p_ov_n
+
+            if diff_l >= 3.5:
+                smart_money_str = f"🔥 Dinero al Local (+{diff_l:.1f}%)"
+            elif diff_v >= 3.5:
+                smart_money_str = f"🔥 Dinero a Visita (+{diff_v:.1f}%)"
+            elif diff_e >= 3.0:
+                smart_money_str = f"🟡 Dinero al Empate (+{diff_e:.1f}%)"
 
     fav = "Local" if pl_n > pv_n else ("Visitante" if pv_n > pl_n else "Empate")
     dif = round(abs(pl_n - pv_n), 2)
@@ -832,7 +879,7 @@ def procesar_fila_independiente(row):
         "#": num, "Liga": liga, "Partido": f"{loc} vs {vis}",
         "Momio Local": str(ml_raw or ""), "Momio Empate": str(me_raw or ""), "Momio Visitante": str(mv_raw or ""),
         "Prob. Local (%)": pl_str, "Prob. Empate (%)": pe_str, "Prob. Visitante (%)": pv_str,
-        "Favorito": fav, "Dif. Probabilidad (%)": dif_str, "Clasificación Partido": clasif
+        "Favorito": fav, "Dif. Probabilidad (%)": dif_str, "Smart Money": smart_money_str, "Clasificación Partido": clasif
     }
 
 def procesar_tabla_completa(datos_raw):
@@ -933,7 +980,8 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
 
                         st.session_state["api_cache_xg"][partido_sel] = {
                             "xg_l": lambda_l, "xg_v": mu_v,
-                            "name_l": info_l['nombre'], "name_v": info_v['nombre']
+                            "name_l": info_l['nombre'], "name_v": info_v['nombre'],
+                            "id_l": info_l["id"], "id_v": info_v["id"]
                         }
                         guardar_cache_api(st.session_state["api_cache_xg"])
 
@@ -1092,11 +1140,24 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                 f"💡 **En caso de jugarlo a Doble:** La combinación cuantitativa más fuerte es {doble_recomendado} (Combinando **{t1_nom}** de {t1_val}% + **{t2_nom}** de {t2_val}%)."
                             )
 
-                        # 6. HISTORIAL H2H
+                        # 6. HISTORIAL H2H CON FILTRO DE SEDES
                         st.divider()
                         st.subheader(f"📋 6. Historial Frente a Frente Multitorneo ({info_l['nombre']} vs {info_v['nombre']})")
-                        if not df_h2h.empty: st.dataframe(df_h2h, width="stretch")
-                        else: st.warning("Sin historial H2H reciente registrado para estos dos clubes.")
+                        if not df_h2h.empty:
+                            filtro_h2h = st.radio(
+                                "Filtro de Historial Directo:",
+                                ["🌐 Todos los enfrentamientos directos", f"🏟️ Solo en estadio de {info_l['nombre']} ({info_l['nombre']} de Local)"],
+                                horizontal=True,
+                                key="radio_h2h_sede"
+                            )
+                            if "Solo en estadio" in filtro_h2h:
+                                df_h2h_mostrado = df_h2h[df_h2h["Local"].str.lower().str.contains(info_l['nombre'].lower(), na=False)]
+                                st.info(f"Mostrando solo enfrentamientos donde **{info_l['nombre']}** recibió a **{info_v['nombre']}** en casa.")
+                            else:
+                                df_h2h_mostrado = df_h2h
+                            st.dataframe(df_h2h_mostrado, width="stretch")
+                        else:
+                            st.warning("Sin historial H2H reciente registrado para estos dos clubes.")
 
                         # 7. BAJAS
                         st.divider()
@@ -1191,7 +1252,7 @@ elif st.session_state["menu_activo"] == "🎯 5. Método Poisson & Dixon-Coles":
             st.subheader("Top 5 Marcadores Exactos Probables")
             st.dataframe(pd.DataFrame(top_m), width="stretch")
 
-# MÓDULO 6: QUINIELA MÚLTIPLE (7/8 DOBLES)
+# MÓDULO 6: QUINIELA MÚLTIPLE (7/8 DOBLES) CON EXPORTACIÓN E IMPRESIÓN
 elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)":
     st.subheader("🎫 Configuración de Volante Múltiple (Quiniela Directa Progol)")
     st.caption("Selecciona el número de coberturas dobles que jugarás. El algoritmo asignará automáticamente los Dobles a los partidos más difíciles/trampa y los Fijos a los partidos con mayor certeza.")
@@ -1289,6 +1350,19 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
 
     st.dataframe(df_quiniela_boletos, width="stretch", height=540)
 
+    # Formato de copia rápida para WhatsApp
+    st.divider()
+    st.subheader("📲 Formato Directo para Copiar / WhatsApp")
+    combinaciones = 2 ** cant_dobles
+    costo_total = combinaciones * 15
+    texto_wp = f"*QUINIELA PROGOL ({cant_dobles} DOBLES + {cant_fijos} FIJOS)*\n"
+    texto_wp += f"Total Combinaciones: {combinaciones:,} | Costo Estimado: ${costo_total:,} MXN\n"
+    texto_wp += "----------------------------------------\n"
+    for item in evaluacion_partidos:
+        texto_wp += f"{item['#']}. {item['Partido']} ➔ [{item['pronostico']}]\n"
+    st.code(texto_wp, language="text")
+    st.caption("💡 *Tip de Impresión: Presiona Ctrl + P en tu teclado para imprimir este boleto sin barras laterales ni botones.*")
+
 # MÓDULO 7: MATRIZ 15 BOLETOS
 elif st.session_state["menu_activo"] == "🎰 7. Matriz 15 Boletos":
     st.subheader("Generación de Matriz Reducida (15 Boletos Sencillos)")
@@ -1311,13 +1385,13 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz 15 Boletos":
 # MÓDULO 8: CAPTURA Y EDICIÓN
 elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     st.subheader("Edición de Quiniela Manual (Celda a Celda)")
-    st.info("💡 Selecciona la Liga o Torneo exacto (incluye 'Amistoso / Club Friendlies', 'FA Cup', 'EFL Cup', 'Copa del Rey', etc.) y luego captura los equipos y momios.")
+    st.info("💡 Captura los momios vigentes. Opcionalmente puedes ingresar los momios de Apertura (Lunes) para activar el análisis automático de Smart Money.")
 
     df_cap_edit = pd.DataFrame(st.session_state["tabla_progol"])
     
     grid_captura = st.data_editor(
         df_cap_edit,
-        column_order=["#", "Liga", "Local", "Visita", "Momio Local", "Momio Empate", "Momio Visitante"],
+        column_order=["#", "Liga", "Local", "Visita", "Momio Local", "Momio Empate", "Momio Visitante", "Apertura Local", "Apertura Empate", "Apertura Visitante"],
         column_config={
             "Liga": st.column_config.SelectboxColumn(
                 "Liga / Torneo",
@@ -1340,7 +1414,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             datos_guardar = grid_captura.to_dict("records")
             st.session_state["tabla_progol"] = datos_guardar
             guardar_disco(datos_guardar)
-            st.success("✅ Cambios y Ligas guardados en disco permanentemente.")
+            st.success("✅ Cambios, Ligas y Momios de Apertura guardados en disco permanentemente.")
             st.rerun()
 
     with col_c2:
