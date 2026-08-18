@@ -76,6 +76,9 @@ OPCIONES_LIGAS = [
     "Liga MX Femenil",
     "MLS",
     "NWSL (USA Femenil)",
+    "Liga Chilena (Primera División)",
+    "Copa Chile",
+    "Supercopa de Chile",
     "Amistoso / Club Friendlies",
     "Amistoso Internacional (Selecciones)",
     "Premier League",
@@ -127,6 +130,12 @@ TABLA_EN_BLANCO = [
 ]
 
 MAPA_LIGAS_ID = {
+    "liga chilena (primera división)": 265,
+    "liga chilena": 265,
+    "primera division chile": 265,
+    "chile": 265,
+    "copa chile": 266,
+    "supercopa de chile": 267,
     "amistoso / club friendlies": 667,
     "amistoso": 667,
     "amistosos": 667,
@@ -292,7 +301,24 @@ ALIAS_EQUIPOS = {
     "pumas": "UNAM Pumas",
     "cruz azul": "Cruz Azul",
     "atlas": "Atlas",
-    "tijuana": "Club Tijuana"
+    "tijuana": "Club Tijuana",
+    "colo colo": "Colo Colo",
+    "u de chile": "Universidad de Chile",
+    "univ de chile": "Universidad de Chile",
+    "u catolica": "Universidad Catolica",
+    "univ catolica": "Universidad Catolica",
+    "union espanola": "Union Espanola",
+    "audax": "Audax Italiano",
+    "audax italiano": "Audax Italiano",
+    "cobreloa": "Cobreloa",
+    "coquimbo": "Coquimbo Unido",
+    "huachipato": "Huachipato",
+    "palestino": "Palestino",
+    "everton de vina": "Everton de Vina",
+    "ohiggins": "O'Higgins",
+    "cobresal": "Cobresal",
+    "deportes iquique": "Deportes Iquique",
+    "nublense": "Nublense"
 }
 
 class MotorAPISportsUltra:
@@ -373,7 +399,7 @@ class MotorAPISportsUltra:
                     t_name = str(t.get("name", "")).lower()
                     score = 0
 
-                    if pais in ["mexico", "england", "spain", "italy", "germany", "france", "argentina", "brazil", "portugal", "netherlands", "belgium", "usa", "canada"]:
+                    if pais in ["mexico", "england", "spain", "italy", "germany", "france", "argentina", "brazil", "portugal", "netherlands", "belgium", "usa", "canada", "chile"]:
                         score += 300
                     elif "national" in pais or not pais: score += 50
                     else: score -= 100
@@ -611,8 +637,10 @@ class MotorAPISportsUltra:
                     "Fecha": fix.get("date", "").split("T")[0],
                     "Torneo": item.get("league", {}).get("name", ""),
                     "Local": teams.get("home", {}).get("name", ""),
+                    "home_id": teams.get("home", {}).get("id"),
                     "Resultado": f"{goals.get('home', 0)} - {goals.get('away', 0)}",
-                    "Visita": teams.get("away", {}).get("name", "")
+                    "Visita": teams.get("away", {}).get("name", ""),
+                    "away_id": teams.get("away", {}).get("id")
                 })
             return pd.DataFrame(partidos)
         except Exception:
@@ -713,7 +741,7 @@ def detectar_datos_duros(info_l, info_v, df_f1, df_f2, df_h2h):
             try: gh, ga = map(int, m_res.split("-"))
             except: continue
             
-            eq_l_was_home = (info_l['nombre'].lower() in m_loc.lower())
+            eq_l_was_home = es_mismo_equipo(info_l['nombre'], m_loc)
             eq_l_won = (gh > ga) if eq_l_was_home else (ga > gh)
             if eq_l_won: break
             else: sin_ganar_h2h_l += 1
@@ -792,7 +820,6 @@ def procesar_fila_independiente(row):
     me_raw = row.get("Momio Empate")
     mv_raw = row.get("Momio Visitante")
 
-    # Momios de Apertura (Lunes)
     o_l_raw = row.get("Apertura Local")
     o_e_raw = row.get("Apertura Empate")
     o_v_raw = row.get("Apertura Visitante")
@@ -843,7 +870,6 @@ def procesar_fila_independiente(row):
             "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
         }
 
-    # Detección cuantitativa de Smart Money
     smart_money_str = "Estable"
     if o_l_clean is not None and o_e_clean is not None and o_v_clean is not None:
         p_ol = calcular_probabilidad_excel(o_l_clean)
@@ -906,7 +932,6 @@ def sync_tab2_to_tab5():
 def sync_tab5_to_tab2():
     st.session_state["selectbox_tab2"] = st.session_state["selectbox_tab5"]
 
-# Botonera en 2 filas de 4 columnas
 modulos = [
     ("📊 1. ANÁLISIS 1 (Excel)", "📊 1. ANÁLISIS 1 (Excel)"),
     ("🌐 2. Big Data API-Sports (Live)", "🌐 2. Big Data API-Sports (Live)"),
@@ -1148,14 +1173,16 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                 "Filtro de Historial Directo:",
                                 ["🌐 Todos los enfrentamientos directos", f"🏟️ Solo en estadio de {info_l['nombre']} ({info_l['nombre']} de Local)"],
                                 horizontal=True,
-                                key="radio_h2h_sede"
+                                key=f"radio_h2h_{partido_sel}"
                             )
                             if "Solo en estadio" in filtro_h2h:
-                                df_h2h_mostrado = df_h2h[df_h2h["Local"].str.lower().str.contains(info_l['nombre'].lower(), na=False)]
-                                st.info(f"Mostrando solo enfrentamientos donde **{info_l['nombre']}** recibió a **{info_v['nombre']}** en casa.")
+                                df_h2h_mostrado = df_h2h[df_h2h.apply(lambda r: (r.get("home_id") == info_l["id"]) or es_mismo_equipo(r.get("Local"), info_l["nombre"]), axis=1)]
+                                st.info(f"Mostrando solo enfrentamientos directos en la cancha de **{info_l['nombre']}**.")
                             else:
                                 df_h2h_mostrado = df_h2h
-                            st.dataframe(df_h2h_mostrado, width="stretch")
+                            
+                            cols_h2h = ["Fecha", "Torneo", "Local", "Resultado", "Visita"]
+                            st.dataframe(df_h2h_mostrado[cols_h2h], width="stretch")
                         else:
                             st.warning("Sin historial H2H reciente registrado para estos dos clubes.")
 
@@ -1361,7 +1388,7 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
     for item in evaluacion_partidos:
         texto_wp += f"{item['#']}. {item['Partido']} ➔ [{item['pronostico']}]\n"
     st.code(texto_wp, language="text")
-    st.caption("💡 *Tip de Impresión: Presiona Ctrl + P en tu teclado para imprimir este boleto sin barras laterales ni botones.*")
+    st.caption("💡 *Tip de Impresión: Presiona Ctrl + P en tu teclado para imprimir este volante sin barras laterales ni botones.*")
 
 # MÓDULO 7: MATRIZ 15 BOLETOS
 elif st.session_state["menu_activo"] == "🎰 7. Matriz 15 Boletos":
