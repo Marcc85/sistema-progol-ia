@@ -1640,21 +1640,21 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             "Apertura Local", "Apertura Empate", "Apertura Visitante"
         ],
         column_config={
-            "Liga": st.column_config.SelectboxColumn(
-                "Liga / Torneo",
-                help="Selecciona la liga para garantizar la búsqueda exacta de los equipos en la API",
-                options=OPCIONES_LIGAS,
-                required=True,
-                default="Liga MX"
-            ),
-          "Local": st.column_config.TextColumn(
+       "Liga": st.column_config.SelectboxColumn(
+            "Liga / Torneo",
+            help="Selecciona cualquier liga, copa o selección del mundo",
+            options=OPCIONES_LIGAS,
+            required=True,
+            default="Liga MX (Mexico)"
+        ),
+        "Local": st.column_config.TextColumn(
             "Local",
-            help="Escribe cualquier equipo, selección o club del mundo de la API-Sports",
+            help="Copia y pega aquí el equipo local tal como viene en tu quiniela o casino",
             required=True,
         ),
         "Visita": st.column_config.TextColumn(
             "Visita",
-            help="Escribe cualquier equipo visitante del mundo",
+            help="Copia y pega aquí el equipo visitante",
             required=True,
         ),
             "Over 2.5": st.column_config.TextColumn(
