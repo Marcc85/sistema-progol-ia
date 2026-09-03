@@ -1681,7 +1681,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             guardar_cache_api({})
             st.rerun()
 
-    elif st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado)":
+    if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado)":
     st.subheader("🎯 Módulo Especializado: Bolsa Grande / Acumulado")
     st.write("Genera boletos optimizados aplicando filtros estrictos: Máximo 4 empates y de 2 a 3 sorpresas científicas por boleto.")
     
