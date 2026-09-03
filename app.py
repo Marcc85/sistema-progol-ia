@@ -1029,8 +1029,8 @@ for j in range(4):
     if fila2[j].button(label, type="primary" if is_active else "secondary", key=f"btn_nav_{4+j}", use_container_width=True):
         st.session_state["menu_activo"] = val
         st.rerun()
-        fila3 = st.columns(1)
-if fila3[0].button(modulos[8][0], type="primary" if st.session_state["menu_activo"] == modulos[8][1] else "secondary", key="btn_nav_8", use_container_width=True):
+col_bolsa = st.columns(1)
+if col_bolsa[0].button(modulos[8][0], type="primary" if st.session_state["menu_activo"] == modulos[8][1] else "secondary", key="btn_nav_8", use_container_width=True):
     st.session_state["menu_activo"] = modulos[8][1]
     st.rerun()
 
