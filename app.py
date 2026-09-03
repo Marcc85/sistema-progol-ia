@@ -1739,3 +1739,45 @@ if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado
                 st.warning("Intenta de nuevo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
         else:
             st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
+            import unicodedata
+from thefuzz import process
+
+def limpiar_texto_equipo(texto):
+    """Normaliza el texto para comparar sin acentos ni mayúsculas."""
+    if not isinstance(texto, str):
+        return ""
+    nfkd = unicodedata.normalize('NFKD', texto)
+    return "".join([c for c in nfkd if not unicodedata.combining(c)]).lower().strip()
+
+@st.cache_data(ttl=3600)
+def obtener_equipos_api(league_id, temporada=2026):
+    """Descarga el catálogo oficial de equipos para una liga y temporada específica."""
+    url = "https://v3.football.api-sports.io/teams"
+    headers = {
+        "x-rapidapi-key": st.secrets.get("API_KEY", "TU_API_KEY_AQUI"),
+        "x-rapidapi-host": "v3.football.api-sports.io"
+    }
+    params = {"league": league_id, "season": temporada}
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get("response", [])
+            return {item["team"]["name"]: item["team"]["id"] for item in data}
+    except Exception as e:
+        st.error(f"Error al obtener equipos de la API: {e}")
+    return {}
+
+def resolver_id_equipo(nombre_capturado, diccionario_equipos_api):
+    """Busca mediante coincidencia difusa el ID oficial del equipo."""
+    nombres_oficiales = list(diccionario_equipos_api.keys())
+    if not nombres_oficiales:
+        return None, nombre_capturado
+    
+    nombres_limpios = {limpiar_texto_equipo(k): k for k in nombres_oficiales}
+    mejor_match, score = process.extractOne(limpiar_texto_equipo(nombre_capturado), list(nombres_limpios.keys()))
+    
+    if score > 70:
+        nombre_real = nombres_limpios[mejor_match]
+        return diccionario_equipos_api[nombre_real], nombre_real
+        
+    return None, nombre_capturado
