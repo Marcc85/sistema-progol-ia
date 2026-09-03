@@ -4,6 +4,7 @@ import requests
 import json
 import os
 import math
+import io
 
 st.set_page_config(
     page_title="Centro de Mando Progol v4.0 Ultra",
@@ -24,7 +25,6 @@ st.markdown(
             padding-left: 1rem !important;
             padding-right: 1rem !important;
         }
-        /* Botonera uniforme adaptable */
         div.stButton > button {
             width: 100% !important;
             min-height: 48px !important;
@@ -45,12 +45,10 @@ st.markdown(
             border-color: #ff4b4b !important;
             color: #ff4b4b !important;
         }
-        /* Ajuste para tablas en móviles */
         [data-testid="stDataFrame"] {
             width: 100% !important;
             overflow-x: auto !important;
         }
-        /* Formato limpio de impresión */
         @media print {
             header, footer, [data-testid="stSidebar"], [data-testid="stHeader"], div.stButton, .no-print {
                 display: none !important;
@@ -122,6 +120,8 @@ TABLA_EN_BLANCO = [
         "Momio Local": "",
         "Momio Empate": "",
         "Momio Visitante": "",
+        "Over 2.5": "",
+        "Under 2.5": "",
         "Apertura Local": "",
         "Apertura Empate": "",
         "Apertura Visitante": ""
@@ -218,6 +218,8 @@ def cargar_disco():
                 if isinstance(data, list) and len(data) == 14:
                     for item in data:
                         if "Liga" not in item: item["Liga"] = "Liga MX"
+                        if "Over 2.5" not in item: item["Over 2.5"] = ""
+                        if "Under 2.5" not in item: item["Under 2.5"] = ""
                         if "Apertura Local" not in item: item["Apertura Local"] = ""
                         if "Apertura Empate" not in item: item["Apertura Empate"] = ""
                         if "Apertura Visitante" not in item: item["Apertura Visitante"] = ""
@@ -302,6 +304,10 @@ ALIAS_EQUIPOS = {
     "cruz azul": "Cruz Azul",
     "atlas": "Atlas",
     "tijuana": "Club Tijuana",
+    "juarez": "FC Juarez",
+    "fc juarez": "FC Juarez",
+    "pachuca": "CF Pachuca",
+    "cf pachuca": "CF Pachuca",
     "colo colo": "Colo Colo",
     "u de chile": "Universidad de Chile",
     "univ de chile": "Universidad de Chile",
@@ -374,7 +380,7 @@ class MotorAPISportsUltra:
                                 query_search.lower() in t_name or
                                 t_name in raw_clean):
                                 return {
-                                    "id": t.get("id"),
+                                    "id": int(t.get("id")),
                                     "nombre": t.get("name"),
                                     "pais": str(liga_nombre).upper() if liga_nombre else t.get("country", "")
                                 }
@@ -431,7 +437,7 @@ class MotorAPISportsUltra:
                         pais_final = "MLS"
 
                     return {
-                        "id": best.get("id"),
+                        "id": int(best.get("id")),
                         "nombre": best.get("name"),
                         "pais": pais_final
                     }
@@ -633,14 +639,18 @@ class MotorAPISportsUltra:
                 fix = item.get("fixture", {})
                 teams = item.get("teams", {})
                 goals = item.get("goals", {})
+                
+                h_id = teams.get("home", {}).get("id")
+                a_id = teams.get("away", {}).get("id")
+
                 partidos.append({
                     "Fecha": fix.get("date", "").split("T")[0],
                     "Torneo": item.get("league", {}).get("name", ""),
                     "Local": teams.get("home", {}).get("name", ""),
-                    "home_id": teams.get("home", {}).get("id"),
+                    "home_id": int(h_id) if h_id is not None else None,
                     "Resultado": f"{goals.get('home', 0)} - {goals.get('away', 0)}",
                     "Visita": teams.get("away", {}).get("name", ""),
-                    "away_id": teams.get("away", {}).get("id")
+                    "away_id": int(a_id) if a_id is not None else None
                 })
             return pd.DataFrame(partidos)
         except Exception:
@@ -667,22 +677,20 @@ class MotorAPISportsUltra:
 # ------------------------------------------------------------------------------
 # 3. FUNCIONES DE RESALTADO Y COMPARACIÓN DE EQUIPOS
 # ------------------------------------------------------------------------------
+def limpiar_nombre_equipo(nom):
+    if not nom: return ""
+    s = str(nom).lower().replace(".", "").strip()
+    stops = ["fc", "cf", "club", "cd", "ca", "sd", "ud", "kv", "as", "ac", "u.n.a.m.", "unam", "c.a.", "g.d.", "c.d.", "w", "women", "femenil"]
+    w = [p for p in s.split() if p not in stops]
+    return " ".join(w) if w else s
+
 def es_mismo_equipo(nom1, nom2):
     if not nom1 or not nom2: return False
-    s1 = str(nom1).lower().replace(".", "").strip()
-    s2 = str(nom2).lower().replace(".", "").strip()
-    if s1 == s2: return True
-    
-    stops = ["fc", "club", "cd", "ca", "sd", "ud", "kv", "as", "ac", "cf", "u.n.a.m.", "unam", "c.a.", "g.d.", "c.d.", "w", "women", "femenil"]
-    w1 = [w for w in s1.split() if w not in stops]
-    w2 = [w for w in s2.split() if w not in stops]
-    
-    clean1 = " ".join(w1) if w1 else s1
-    clean2 = " ".join(w2) if w2 else s2
-    
-    if clean1 == clean2: return True
-    if len(clean1) >= 3 and len(clean2) >= 3:
-        if clean1 in clean2 or clean2 in clean1: return True
+    c1 = limpiar_nombre_equipo(nom1)
+    c2 = limpiar_nombre_equipo(nom2)
+    if c1 == c2: return True
+    if len(c1) >= 3 and len(c2) >= 3:
+        if c1 in c2 or c2 in c1: return True
     return False
 
 def resaltar_participantes(df_tab, eq_l_name, eq_v_name):
@@ -741,7 +749,7 @@ def detectar_datos_duros(info_l, info_v, df_f1, df_f2, df_h2h):
             try: gh, ga = map(int, m_res.split("-"))
             except: continue
             
-            eq_l_was_home = es_mismo_equipo(info_l['nombre'], m_loc)
+            eq_l_was_home = (p.get("home_id") == info_l["id"]) or es_mismo_equipo(info_l['nombre'], m_loc)
             eq_l_won = (gh > ga) if eq_l_was_home else (ga > gh)
             if eq_l_won: break
             else: sin_ganar_h2h_l += 1
@@ -820,6 +828,9 @@ def procesar_fila_independiente(row):
     me_raw = row.get("Momio Empate")
     mv_raw = row.get("Momio Visitante")
 
+    ov_raw = row.get("Over 2.5")
+    un_raw = row.get("Under 2.5")
+
     o_l_raw = row.get("Apertura Local")
     o_e_raw = row.get("Apertura Empate")
     o_v_raw = row.get("Apertura Visitante")
@@ -827,6 +838,9 @@ def procesar_fila_independiente(row):
     ml_clean = limpiar_y_convertir_momio(ml_raw)
     me_clean = limpiar_y_convertir_momio(me_raw)
     mv_clean = limpiar_y_convertir_momio(mv_raw)
+
+    ov_clean = limpiar_y_convertir_momio(ov_raw)
+    un_clean = limpiar_y_convertir_momio(un_raw)
 
     o_l_clean = limpiar_y_convertir_momio(o_l_raw)
     o_e_clean = limpiar_y_convertir_momio(o_e_raw)
@@ -836,8 +850,9 @@ def procesar_fila_independiente(row):
         return {
             "#": num, "Liga": liga, "Partido": f"Partido #{num}",
             "Momio Local": "", "Momio Empate": "", "Momio Visitante": "",
+            "Over 2.5": "", "Under 2.5": "",
             "Prob. Local (%)": "-", "Prob. Empate (%)": "-", "Prob. Visitante (%)": "-",
-            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
+            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "PRO Line Alert": "-", "Clasificación Partido": "EN ESPERA"
         }
 
     if ml_clean is None or me_clean is None or mv_clean is None:
@@ -845,8 +860,9 @@ def procesar_fila_independiente(row):
             "#": num, "Liga": liga, "Partido": f"{loc} vs {vis}" if (loc and vis) else (loc if loc else vis),
             "Momio Local": ml_raw if ml_raw else "", "Momio Empate": me_raw if me_raw else "",
             "Momio Visitante": mv_raw if mv_raw else "",
+            "Over 2.5": ov_raw if ov_raw else "", "Under 2.5": un_raw if un_raw else "",
             "Prob. Local (%)": "-", "Prob. Empate (%)": "-", "Prob. Visitante (%)": "-",
-            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
+            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "PRO Line Alert": "-", "Clasificación Partido": "EN ESPERA"
         }
 
     pl = calcular_probabilidad_excel(ml_clean)
@@ -866,8 +882,9 @@ def procesar_fila_independiente(row):
         return {
             "#": num, "Liga": liga, "Partido": f"{loc} vs {vis}",
             "Momio Local": ml_raw or "", "Momio Empate": me_raw or "", "Momio Visitante": mv_raw or "",
+            "Over 2.5": ov_raw or "", "Under 2.5": un_raw or "",
             "Prob. Local (%)": "-", "Prob. Empate (%)": "-", "Prob. Visitante (%)": "-",
-            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "Clasificación Partido": "EN ESPERA"
+            "Favorito": "-", "Dif. Probabilidad (%)": "-", "Smart Money": "-", "PRO Line Alert": "-", "Clasificación Partido": "EN ESPERA"
         }
 
     smart_money_str = "Estable"
@@ -892,6 +909,19 @@ def procesar_fila_independiente(row):
             elif diff_e >= 3.0:
                 smart_money_str = f"🟡 Dinero al Empate (+{diff_e:.1f}%)"
 
+    pro_line_alert = "Estable"
+    if o_l_clean is not None and ml_clean is not None:
+        if o_l_clean > -140 and ml_clean <= -140:
+            pro_line_alert = "🔥 ALERTA: Fijo Activado (Local <= -140)"
+        elif o_l_clean <= -140 and ml_clean > -140:
+            pro_line_alert = "⚠️ ALERTA: Fuga Institucional (Local > -140)"
+
+    if o_v_clean is not None and mv_clean is not None:
+        if o_v_clean > -140 and mv_clean <= -140:
+            pro_line_alert = "🔥 ALERTA: Fijo Activado (Visita <= -140)"
+        elif o_v_clean <= -140 and mv_clean > -140:
+            pro_line_alert = "⚠️ ALERTA: Fuga Institucional (Visita > -140)"
+
     fav = "Local" if pl_n > pv_n else ("Visitante" if pv_n > pl_n else "Empate")
     dif = round(abs(pl_n - pv_n), 2)
     dif_str = f"{dif:.2f}%"
@@ -904,8 +934,10 @@ def procesar_fila_independiente(row):
     return {
         "#": num, "Liga": liga, "Partido": f"{loc} vs {vis}",
         "Momio Local": str(ml_raw or ""), "Momio Empate": str(me_raw or ""), "Momio Visitante": str(mv_raw or ""),
+        "Over 2.5": str(ov_raw or ""), "Under 2.5": str(un_raw or ""),
         "Prob. Local (%)": pl_str, "Prob. Empate (%)": pe_str, "Prob. Visitante (%)": pv_str,
-        "Favorito": fav, "Dif. Probabilidad (%)": dif_str, "Smart Money": smart_money_str, "Clasificación Partido": clasif
+        "Favorito": fav, "Dif. Probabilidad (%)": dif_str, "Smart Money": smart_money_str, 
+        "PRO Line Alert": pro_line_alert, "Clasificación Partido": clasif
     }
 
 def procesar_tabla_completa(datos_raw):
@@ -939,7 +971,7 @@ modulos = [
     ("🔥 4. Detector de Trampas", "🔥 4. Detector de Trampas"),
     ("🎯 5. Método Poisson & Dixon-Coles", "🎯 5. Método Poisson & Dixon-Coles"),
     ("🎫 6. Quiniela Múltiple (7/8 Dobles)", "🎫 6. Quiniela Múltiple (7/8 Dobles)"),
-    ("🎰 7. Matriz 15 Boletos", "🎰 7. Matriz 15 Boletos"),
+    ("🎰 7. Matriz Reducida", "🎰 7. Matriz Reducida"),
     ("📋 8. CAPTURA Y EDICIÓN", "📋 8. CAPTURA Y EDICIÓN")
 ]
 
@@ -1081,7 +1113,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
 
                         pj_v = stats_v.get("visita", {}).get("pj", 0)
                         pg_v = stats_v.get("visita", {}).get("pg", 0)
-                        pct_win_v = (pg_v / pj_v * 100.0) if pj_v > 0 else 0.0
 
                         data_metrics = [
                             {
@@ -1154,6 +1185,7 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         else:
                             doble_recomendado = "🎯 **Doble Empate / Visita (X2)**"
 
+                        pct_win_v = (pg_v / pj_v * 100.0) if pj_v > 0 else 0.0
                         if es_favorito_v and pct_win_v < 35.0:
                             st.error(
                                 f"🔥 **ALERTA DE PARTIDO TRAMPA DETECTADA:** {info_v['nombre']} es marcado como favorito por el mercado de apuestas, pero sus métricas reales de Visitante Puro son muy bajas ({pct_win_v:.1f}% de victorias fuera de casa).\n\n"
@@ -1165,7 +1197,9 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                 f"💡 **En caso de jugarlo a Doble:** La combinación cuantitativa más fuerte es {doble_recomendado} (Combinando **{t1_nom}** de {t1_val}% + **{t2_nom}** de {t2_val}%)."
                             )
 
-                        # 6. HISTORIAL H2H CON FILTRO DE SEDES
+                        # ------------------------------------------------------
+                        # 6. HISTORIAL H2H CON FILTRO DE SEDES (BLINDADO POR ID)
+                        # ------------------------------------------------------
                         st.divider()
                         st.subheader(f"📋 6. Historial Frente a Frente Multitorneo ({info_l['nombre']} vs {info_v['nombre']})")
                         if not df_h2h.empty:
@@ -1175,9 +1209,11 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                 horizontal=True,
                                 key=f"radio_h2h_{partido_sel}"
                             )
+                            
                             if "Solo en estadio" in filtro_h2h:
-                                df_h2h_mostrado = df_h2h[df_h2h.apply(lambda r: (r.get("home_id") == info_l["id"]) or es_mismo_equipo(r.get("Local"), info_l["nombre"]), axis=1)]
-                                st.info(f"Mostrando solo enfrentamientos directos en la cancha de **{info_l['nombre']}**.")
+                                target_id = int(info_l["id"])
+                                df_h2h_mostrado = df_h2h[df_h2h["home_id"] == target_id]
+                                st.info(f"Mostrando únicamente enfrentamientos oficiales donde **{info_l['nombre']}** jugó de Local.")
                             else:
                                 df_h2h_mostrado = df_h2h
                             
@@ -1273,16 +1309,16 @@ elif st.session_state["menu_activo"] == "🎯 5. Método Poisson & Dixon-Coles":
                 st.caption("Ajuste Dixon-Coles")
             with col_xg3: 
                 st.metric(f"✈️ Gana {vis_name}", f"{pv_dc}%")
-                st.caption(f"{xg_visita:.2f} xG Esperados")
+                st.caption(f"{mu_v:.2f} xG Esperados")
 
             st.divider()
             st.subheader("Top 5 Marcadores Exactos Probables")
             st.dataframe(pd.DataFrame(top_m), width="stretch")
 
-# MÓDULO 6: QUINIELA MÚLTIPLE (7/8 DOBLES) CON EXPORTACIÓN E IMPRESIÓN
+# MÓDULO 6: QUINIELA MÚLTIPLE (7/8 DOBLES)
 elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)":
     st.subheader("🎫 Configuración de Volante Múltiple (Quiniela Directa Progol)")
-    st.caption("Selecciona el número de coberturas dobles que jugarás. El algoritmo asignará automáticamente los Dobles a los partidos más difíciles/trampa y los Fijos a los partidos con mayor certeza.")
+    st.caption("Asignación de coberturas dobles según dificultad de casillero y certeza del favorito.")
 
     cant_dobles = st.radio("Elige la cantidad de Dobles para tu Boleto:", [7, 8], index=0, horizontal=True)
     cant_fijos = 14 - cant_dobles
@@ -1356,7 +1392,7 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
         if idx < cant_dobles:
             item["tipo"] = "🔥 DOBLE"
             item["pronostico"] = item["pron_doble"]
-            item["argumento"] = f"Alta Incertidumbre ({item['top1_txt']} {item['top1_val']:.1f}% / {item['top2_txt']} {item['top2_val']:.1f}% - {item['clasif']})"
+            item["argumento"] = f"Alta Incertidumbre ({item['top1_txt']} {item['top1_val']:.1f}% / {item['top2_txt']} {item['top2_val']:.1f} - {item['clasif']})"
         else:
             item["tipo"] = "🟢 FIJO"
             item["pronostico"] = f"{item['top1_code']} ({item['top1_txt']})"
@@ -1377,7 +1413,6 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
 
     st.dataframe(df_quiniela_boletos, width="stretch", height=540)
 
-    # Formato de copia rápida para WhatsApp
     st.divider()
     st.subheader("📲 Formato Directo para Copiar / WhatsApp")
     combinaciones = 2 ** cant_dobles
@@ -1388,37 +1423,184 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
     for item in evaluacion_partidos:
         texto_wp += f"{item['#']}. {item['Partido']} ➔ [{item['pronostico']}]\n"
     st.code(texto_wp, language="text")
-    st.caption("💡 *Tip de Impresión: Presiona Ctrl + P en tu teclado para imprimir este volante sin barras laterales ni botones.*")
 
-# MÓDULO 7: MATRIZ 15 BOLETOS
-elif st.session_state["menu_activo"] == "🎰 7. Matriz 15 Boletos":
-    st.subheader("Generación de Matriz Reducida (15 Boletos Sencillos)")
-    partidos_m = [p for p in st.session_state.get("tabla_progol", []) if p.get("Local", "").strip() != ""]
+# ------------------------------------------------------------------------------
+# MÓDULO 7: MATRIZ REDUCIDA CALIBRADA (CONFIGURABLE: 7 U 8 DOBLES)
+# ------------------------------------------------------------------------------
+elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
+    st.subheader("🎰 Generador de Matriz Reducida Optimizada")
+    st.caption("Distribución matemática reducida de 12 combinaciones para optimizar el volante cubriendo fijos inamovibles y dobles estratégicos.")
 
-    if st.button("🚀 Generar Matriz Optimizada", type="primary"):
-        boletos = []
-        for b in range(1, 16):
-            jugada = []
-            for idx, p in enumerate(partidos_m):
-                l, v = p.get("Local"), p.get("Visita")
-                pron = "1X" if (b + idx) % 2 == 0 else ("X2" if idx < 7 else ("1" if (b + idx) % 3 == 0 else "2"))
-                jugada.append({"#": idx + 1, "Partido": f"{l} vs {v}", "Pronóstico": pron})
-            boletos.append({"boleto": b, "jugada": jugada})
+    # Selector de 7 u 8 dobles
+    cant_dobles_matriz = st.radio(
+        "Configura la cantidad de Dobles para la Matriz:",
+        [7, 8],
+        index=0,
+        horizontal=True,
+        key="radio_cant_dobles_matriz"
+    )
+    cant_fijos_matriz = 14 - cant_dobles_matriz
 
-        tabs_b = st.tabs([f"Boleto #{i+1}" for i in range(15)])
-        for i, tab in enumerate(tabs_b):
-            with tab: st.dataframe(pd.DataFrame(boletos[i]["jugada"]), width="stretch")
+    # Matrices matemáticas reducidas estándar de 12 columnas (0 = Opción Principal, 1 = Cobertura)
+    MATRIZ_7_DOBLES = [
+        [0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1],
+        [0, 1, 1, 0, 0, 1, 1],
+        [0, 1, 1, 1, 1, 0, 0],
+        [1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 1, 0, 1, 0],
+        [1, 1, 0, 0, 1, 1, 0],
+        [1, 1, 0, 1, 0, 0, 1],
+        [0, 0, 1, 0, 1, 1, 0],
+        [1, 1, 1, 0, 0, 0, 0],
+        [1, 0, 0, 1, 1, 0, 0],
+        [0, 1, 0, 1, 0, 1, 0]
+    ]
 
-# MÓDULO 8: CAPTURA Y EDICIÓN
+    MATRIZ_8_DOBLES = [
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1, 1],
+        [0, 1, 1, 0, 0, 1, 1, 0],
+        [0, 1, 1, 1, 1, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 1],
+        [1, 0, 1, 1, 0, 1, 0, 0],
+        [1, 1, 0, 0, 1, 1, 0, 1],
+        [1, 1, 0, 1, 0, 0, 1, 0],
+        [0, 0, 1, 0, 1, 1, 0, 1],
+        [1, 1, 1, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 1, 0, 0, 1],
+        [0, 1, 0, 1, 0, 1, 0, 0]
+    ]
+
+    matriz_activa = MATRIZ_8_DOBLES if cant_dobles_matriz == 8 else MATRIZ_7_DOBLES
+
+    clasificados = []
+    for r in st.session_state["tabla_progol"]:
+        num = r.get("#")
+        loc = r.get("Local", "").strip()
+        vis = r.get("Visita", "").strip()
+        
+        ml = limpiar_y_convertir_momio(r.get("Momio Local"))
+        me = limpiar_y_convertir_momio(r.get("Momio Empate"))
+        mv = limpiar_y_convertir_momio(r.get("Momio Visitante"))
+        und = limpiar_y_convertir_momio(r.get("Under 2.5"))
+        ov = limpiar_y_convertir_momio(r.get("Over 2.5"))
+        
+        p_nombre = f"{loc} vs {vis}" if loc and vis else f"Casilla {num}"
+
+        # Regla del -140 para fijos
+        es_fijo_l = ml is not None and ml <= -140
+        es_fijo_v = mv is not None and mv <= -140
+
+        score_firmeza = 0.0
+        if ml is not None and ml < 0: score_firmeza = abs(ml)
+        elif mv is not None and mv < 0: score_firmeza = abs(mv)
+
+        if es_fijo_l:
+            tipo = "FIJO"
+            op1, op2 = "1", "1"
+        elif es_fijo_v:
+            tipo = "FIJO"
+            op1, op2 = "2", "2"
+        else:
+            tipo = "DOBLE"
+            # Criterio A: Partido abierto (Over negativo y Empate >= +265) -> Doble 1-2
+            if ov is not None and ov < 0 and me is not None and me >= 265:
+                op1, op2 = "1", "2"
+            # Criterio B: Partido cerrado (Under negativo o Empate <= +215) -> Doble con Empate
+            elif (und is not None and und < 0) or (me is not None and me <= 215):
+                if ml is not None and mv is not None and ml < mv:
+                    op1, op2 = "1", "X"
+                else:
+                    op1, op2 = "X", "2"
+            else:
+                op1, op2 = ("1", "X") if (ml or 0) < (mv or 0) else ("X", "2")
+
+        clasificados.append({
+            "#": num, "Partido": p_nombre, "Tipo": tipo, "Op1": op1, "Op2": op2, "Score": score_firmeza
+        })
+
+    # Balanceador exacto configurable de 7 a 8 dobles
+    candidatos_dobles = [c for c in clasificados if c["Tipo"] == "DOBLE"]
+    candidatos_fijos = [c for c in clasificados if c["Tipo"] == "FIJO"]
+
+    if len(candidatos_dobles) > cant_dobles_matriz:
+        # Si sobran dobles, los de menor incertidumbre se convierten a fijos
+        candidatos_dobles.sort(key=lambda x: x["Score"], reverse=True)
+        transferir = candidatos_dobles[:(len(candidatos_dobles) - cant_dobles_matriz)]
+        for t in transferir:
+            t["Tipo"] = "FIJO"
+    elif len(candidatos_dobles) < cant_dobles_matriz:
+        # Si faltan dobles, los fijos menos contundentes se cubren con doble
+        candidatos_fijos.sort(key=lambda x: x["Score"])
+        transferir = candidatos_fijos[:(cant_dobles_matriz - len(candidatos_dobles))]
+        for t in transferir:
+            t["Tipo"] = "DOBLE"
+            if t["Op1"] == "1": t["Op2"] = "X"
+            elif t["Op1"] == "2": t["Op2"] = "X"
+
+    fijos_finales = [c for c in clasificados if c["Tipo"] == "FIJO"]
+    dobles_finales = [c for c in clasificados if c["Tipo"] == "DOBLE"]
+
+    col_res1, col_res2 = st.columns(2)
+    with col_res1:
+        st.metric("🔥 Dobles en Matriz", f"{len(dobles_finales)} Dobles")
+    with col_res2:
+        st.metric("🟢 Fijos en Matriz", f"{len(fijos_finales)} Fijos")
+
+    partidos_con_datos = [c for c in clasificados if c["Partido"] != f"Casilla {c['#']}"]
+    if len(partidos_con_datos) == 14:
+        boletos_12 = []
+        for b_idx in range(12):
+            fila_boleto = []
+            d_idx = 0
+            for c in clasificados:
+                if c["Tipo"] == "DOBLE":
+                    pick = c["Op2"] if matriz_activa[b_idx][d_idx] == 1 else c["Op1"]
+                    d_idx += 1
+                else:
+                    pick = c["Op1"]
+                fila_boleto.append(pick)
+            boletos_12.append(fila_boleto)
+
+        col_nombres = [f"Boleto {i+1}" for i in range(12)]
+        df_matriz_final = pd.DataFrame(boletos_12, index=col_nombres).T
+        df_matriz_final.index = [f"#{c['#']} {c['Partido']} ({c['Tipo']})" for c in clasificados]
+
+        st.dataframe(df_matriz_final, width="stretch")
+
+        st.divider()
+        st.subheader("📱 Boletos Individuales para Llenado Rápido")
+        tabs_bol = st.tabs([f"Boleto #{i+1}" for i in range(12)])
+        for i, tab in enumerate(tabs_bol):
+            with tab:
+                df_b = pd.DataFrame({
+                    "Casilla": [f"#{j+1}" for j in range(14)],
+                    "Partido": [clasificados[j]["Partido"] for j in range(14)],
+                    "Tipo": [clasificados[j]["Tipo"] for j in range(14)],
+                    "Pronóstico": boletos_12[i]
+                })
+                st.dataframe(df_b, width="stretch", height=480)
+    else:
+        st.info("Ingresa los 14 partidos y momios en el Módulo 8 para visualizar los 12 boletos generados.")
+
+# ------------------------------------------------------------------------------
+# MÓDULO 8: CAPTURA Y EDICIÓN (CON SISTEMA ANTI-APAGÓN)
+# ------------------------------------------------------------------------------
 elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     st.subheader("Edición de Quiniela Manual (Celda a Celda)")
-    st.info("💡 Captura los momios vigentes. Opcionalmente puedes ingresar los momios de Apertura (Lunes) para activar el análisis automático de Smart Money.")
+    st.info("💡 Captura momios y líneas. Al terminar de capturar, usa los botones de respaldo de abajo para proteger tus datos contra reinicios del servidor.")
 
     df_cap_edit = pd.DataFrame(st.session_state["tabla_progol"])
     
     grid_captura = st.data_editor(
         df_cap_edit,
-        column_order=["#", "Liga", "Local", "Visita", "Momio Local", "Momio Empate", "Momio Visitante", "Apertura Local", "Apertura Empate", "Apertura Visitante"],
+        column_order=[
+            "#", "Liga", "Local", "Visita", 
+            "Momio Local", "Momio Empate", "Momio Visitante", 
+            "Over 2.5", "Under 2.5", 
+            "Apertura Local", "Apertura Empate", "Apertura Visitante"
+        ],
         column_config={
             "Liga": st.column_config.SelectboxColumn(
                 "Liga / Torneo",
@@ -1426,6 +1608,14 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
                 options=OPCIONES_LIGAS,
                 required=True,
                 default="Liga MX"
+            ),
+            "Over 2.5": st.column_config.TextColumn(
+                "Más 2.5 (Over)",
+                help="Momio para Más de 2.5 goles (ej: -150 o +120)"
+            ),
+            "Under 2.5": st.column_config.TextColumn(
+                "Menos 2.5 (Under)",
+                help="Momio para Menos de 2.5 goles (ej: -160 o +135)"
             )
         },
         num_rows="fixed",
@@ -1434,14 +1624,14 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     )
 
     st.write("")
-    col_c1, col_c2, _ = st.columns([2.5, 2.5, 5])
+    col_c1, col_c2, col_c3 = st.columns([2.5, 2.5, 3])
     
     with col_c1:
-        if st.button("💾 Guardar Cambios en Disco", type="primary"):
+        if st.button("💾 Guardar Cambios en Servidor", type="primary"):
             datos_guardar = grid_captura.to_dict("records")
             st.session_state["tabla_progol"] = datos_guardar
             guardar_disco(datos_guardar)
-            st.success("✅ Cambios, Ligas y Momios de Apertura guardados en disco permanentemente.")
+            st.success("✅ Cambios guardados en memoria del servidor.")
             st.rerun()
 
     with col_c2:
@@ -1451,3 +1641,34 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             st.session_state["api_cache_xg"] = {}
             guardar_cache_api({})
             st.rerun()
+
+    # ZONA DE RESPALDO Y CARGA ANTI-APAGÓN
+    st.divider()
+    st.subheader("🛡️ Respaldo Permanente Anti-Apagón de Streamlit")
+    st.caption("Usa estos botones para guardar tu quiniela en tu celular o PC. Si la app se duerme o se borra, solo sube tu respaldo y listo.")
+
+    col_r1, col_r2 = st.columns(2)
+    with col_r1:
+        datos_actuales_json = json.dumps(st.session_state["tabla_progol"], ensure_ascii=False, indent=2)
+        st.download_button(
+            label="📥 Descargar Respaldo de Quiniela (.json)",
+            data=datos_actuales_json,
+            file_name="progol_respaldo.json",
+            mime="application/json",
+            use_container_width=True
+        )
+
+    with col_r2:
+        archivo_subido = st.file_uploader("📤 Restaurar Respaldo (.json)", type=["json"], label_visibility="collapsed")
+        if archivo_subido is not None:
+            try:
+                datos_restaurados = json.load(archivo_subido)
+                if isinstance(datos_restaurados, list) and len(datos_restaurados) == 14:
+                    st.session_state["tabla_progol"] = datos_restaurados
+                    guardar_disco(datos_restaurados)
+                    st.success("✅ ¡Quiniela restaurada con éxito! Todos tus datos están de vuelta.")
+                    st.rerun()
+                else:
+                    st.error("El archivo no tiene el formato de 14 casilleros.")
+            except Exception as e:
+                st.error(f"Error al leer el archivo: {e}")
