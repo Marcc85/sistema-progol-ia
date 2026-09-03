@@ -12,12 +12,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-st.set_page_config(
-        page_title="Centro de Mando Progol v4.0 Ultra",
-        page_icon="🌐",
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
+
 
 def sincronizar_google_sheet(url_sheet):
     try:
