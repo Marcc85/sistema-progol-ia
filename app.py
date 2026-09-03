@@ -1010,7 +1010,8 @@ modulos = [
     ("🎯 5. Método Poisson & Dixon-Coles", "🎯 5. Método Poisson & Dixon-Coles"),
     ("🎫 6. Quiniela Múltiple (7/8 Dobles)", "🎫 6. Quiniela Múltiple (7/8 Dobles)"),
     ("🎰 7. Matriz Reducida", "🎰 7. Matriz Reducida"),
-    ("📋 8. CAPTURA Y EDICIÓN", "📋 8. CAPTURA Y EDICIÓN")
+    ("📋 8. CAPTURA Y EDICIÓN", "📋 8. CAPTURA Y EDICIÓN"),
+    ("🔥 9. Generador Bolsa Grande (Acumulado)", "🔥 9. Generador Bolsa Grande (Acumulado)"),
 ]
 
 fila1 = st.columns(4)
