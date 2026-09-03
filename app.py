@@ -107,48 +107,43 @@ st.markdown(
 ARCHIVO_DISCO = "progol_captura_v7.json"
 ARCHIVO_CACHE_API = "progol_bigdata_cache.json"
 
-OPCIONES_LIGAS = [
-    "Liga MX",
-    "Liga MX Femenil",
-    "MLS",
-    "NWSL (USA Femenil)",
-    "Liga Chilena (Primera División)",
-    "Copa Chile",
-    "Supercopa de Chile",
-    "Amistoso / Club Friendlies",
-    "Amistoso Internacional (Selecciones)",
-    "Premier League",
-    "FA Cup (Inglaterra)",
-    "EFL Cup / Carabao Cup (Inglaterra)",
-    "Championship (Inglaterra 2da)",
-    "Community Shield (Inglaterra)",
-    "La Liga (España)",
-    "Copa del Rey (España)",
-    "Liga F (España Femenil)",
-    "Serie A (Italia)",
-    "Coppa Italia",
-    "Bundesliga (Alemania)",
-    "DFB Pokal (Alemania)",
-    "Ligue 1 (Francia)",
-    "Coupe de France",
-    "Liga Argentina",
-    "Copa Argentina",
-    "Primeira Liga (Portugal)",
-    "Taça de Portugal",
-    "Jupiler Pro League (Bélgica)",
-    "Champions League",
-    "Champions League Femenil",
-    "Europa League",
-    "Leagues Cup",
-    "Concacaf Champions Cup",
-    "Copa Libertadores",
-    "Copa Sudamericana",
-    "Brasileirão",
-    "Copa do Brasil",
-    "Eredivisie (Holanda)",
-    "Otra / Automático"
-]
+import streamlit as st
+import requests
 
+# Función profesional: Descarga en automático CUALQUIER liga o copa del mundo desde la API-Sports
+@st.cache_data(ttl=86400) # Guarda en memoria la lista por 24 horas para que el sistema vuele de rápido
+def cargar_catalogo_global_ligas():
+    url = "https://v3.football.api-sports.io/leagues"
+    headers = {
+        "x-rapidapi-key": st.secrets.get("API_KEY", "TU_API_KEY_AQUI"), # Usa tu llave actual de la app
+        "x-rapidapi-host": "v3.football.api-sports.io"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get("response", [])
+            # Creamos un diccionario inteligente: {"Premier League (England)": 39, "Liga MX (Mexico)": 262, ...}
+            diccionario_ligas = {}
+            for item in data:
+                nombre_liga = item["league"]["name"]
+                pais = item["country"]["name"]
+                liga_id = item["league"]["id"]
+                
+                # Formato profesional con país para distinguirlas si se llaman igual
+                etiqueta = f"{nombre_liga} ({pais})"
+                diccionario_ligas[etiqueta] = liga_id
+                
+            return diccionario_ligas
+    except Exception as e:
+        st.error(f"No se pudo conectar al catálogo global: {e}")
+        
+    # Respaldo por si hay problemas de internet (para que la app no truene)
+    return {"Liga MX (Mexico)": 262, "Premier League (England)": 39}
+
+# Ejecutamos la carga y dejamos listas las opciones para el menú
+LIGAS_IDS_API = cargar_catalogo_global_ligas()
+OPCIONES_LIGAS = list(LIGAS_IDS_API.keys())
 TABLA_EN_BLANCO = [
     {
         "#": i + 1,
