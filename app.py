@@ -1652,40 +1652,14 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
                 required=True,
                 default="Liga MX"
             ),
-           "Local": st.column_config.SelectboxColumn(
+          "Local": st.column_config.TextColumn(
             "Local",
-            help="Selecciona el equipo local oficial",
-            options=[
-                # Liga MX
-                "Club América", "Monterrey", "Tigres UANL", "Cruz Azul", "Toluca",
-                "Pachuca", "Chivas Guadalajara", "Pumas UNAM", "Atlas", "Santos Laguna",
-                "Club León", "Puebla", "Querétaro", "Juárez", "Mazatlán",
-                "Tijuana", "Necaxa", "Atlético San Luis",
-                # La Liga (España)
-                "Real Madrid", "Barcelona", "Atlético de Madrid", "Athletic Club", "Real Sociedad", 
-                "Villarreal", "Real Betis", "Sevilla", "Valencia", "Girona", "Celta de Vigo",
-                # Premier League (Inglaterra)
-                "Manchester City", "Arsenal", "Liverpool", "Manchester United", "Tottenham", 
-                "Chelsea", "Aston Villa", "Newcastle", "West Ham", "Brighton"
-            ],
+            help="Escribe cualquier equipo, selección o club del mundo de la API-Sports",
             required=True,
         ),
-        "Visita": st.column_config.SelectboxColumn(
+        "Visita": st.column_config.TextColumn(
             "Visita",
-            help="Selecciona el equipo visitante oficial",
-            options=[
-                # Liga MX
-                "Club América", "Monterrey", "Tigres UANL", "Cruz Azul", "Toluca",
-                "Pachuca", "Chivas Guadalajara", "Pumas UNAM", "Atlas", "Santos Laguna",
-                "Club León", "Puebla", "Querétaro", "Juárez", "Mazatlán",
-                "Tijuana", "Necaxa", "Atlético San Luis",
-                # La Liga (España)
-                "Real Madrid", "Barcelona", "Atlético de Madrid", "Athletic Club", "Real Sociedad", 
-                "Villarreal", "Real Betis", "Sevilla", "Valencia", "Girona", "Celta de Vigo",
-                # Premier League (Inglaterra)
-                "Manchester City", "Arsenal", "Liverpool", "Manchester United", "Tottenham", 
-                "Chelsea", "Aston Villa", "Newcastle", "West Ham", "Brighton"
-            ],
+            help="Escribe cualquier equipo visitante del mundo",
             required=True,
         ),
             "Over 2.5": st.column_config.TextColumn(
