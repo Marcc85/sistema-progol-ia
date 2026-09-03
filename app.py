@@ -1710,3 +1710,15 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
                     st.error("El archivo no tiene el formato de 14 casilleros.")
             except Exception as e:
                 st.error(f"Error al leer el archivo: {e}")
+                st.markdown("---")
+with st.sidebar.expander("🔗 Sincronizar Google Sheet"):
+    url_google_sheet = st.text_input("Pega el enlace de tu Google Sheet:")
+    if st.button("📥 Importar y Sincronizar"):
+        if url_google_sheet:
+            nuevos_datos = sincronizar_google_sheet(url_google_sheet)
+            if nuevos_datos:
+                st.session_state["tabla_progol"] = nuevos_datos
+                st.success("¡Google Sheet sincronizado con éxito!")
+                st.rerun()
+        else:
+            st.warning("Ingresa un enlace válido.")
