@@ -1685,70 +1685,6 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             guardar_cache_api({})
             st.rerun()
 
-if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado)":
-    st.subheader("🎯 Módulo Especializado: Bolsa Grande / Acumulado")
-    st.write("Genera boletos optimizados aplicando filtros estrictos: Máximo 4 empates y de 2 a 3 sorpresas científicas por boleto.")
-    
-    cant_bols = st.slider("¿Cuántos boletos deseas generar para este acumulado?", min_value=5, max_value=30, value=10, step=5)
-    
-    if st.button("🚀 Generar Matriz de Acumulado"):
-        if 'df_analisis' in locals() or 'df_analisis' in globals():
-            boletos_resultado = generar_boletos_bolsa_grande(cant_bols, df_analisis)
-            if boletos_resultado:
-                st.success(f"¡Se han generado {len(boletos_resultado)} boletos exitosamente con los filtros de Bolsa Grande!")
-                for i, bol in enumerate(boletos_resultado, 1):
-                    st.write(f"Boleto {i}: {bol}")
-            else:
-                st.warning("Intenta de nuevo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
-        else:
-            st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
-    # ZONA DE RESPALDO Y CARGA ANTI-APAGÓN
-    st.divider()
-    st.subheader("🛡️ Respaldo Permanente Anti-Apagón de Streamlit")
-    st.caption("Usa estos botones para guardar tu quiniela en tu celular o PC. Si la app se duerme o se borra, solo sube tu respaldo y listo.")
-
-    col_r1, col_r2 = st.columns(2)
-    with col_r1:
-        datos_actuales_json = json.dumps(st.session_state["tabla_progol"], ensure_ascii=False, indent=2)
-        st.download_button(
-            label="📥 Descargar Respaldo de Quiniela (.json)",
-            data=datos_actuales_json,
-            file_name="progol_respaldo.json",
-            mime="application/json",
-            use_container_width=True
-        )
-
-    with col_r2:
-        archivo_subido = st.file_uploader("📤 Restaurar Respaldo (.json)", type=["json"], label_visibility="collapsed")
-        if archivo_subido is not None:
-            try:
-                datos_restaurados = json.load(archivo_subido)
-                if isinstance(datos_restaurados, list) and len(datos_restaurados) == 14:
-                    st.session_state["tabla_progol"] = datos_restaurados
-                    guardar_disco(datos_restaurados)
-                    st.success("✅ ¡Quiniela restaurada con éxito! Todos tus datos están de vuelta.")
-                    st.rerun()
-                else:
-                    st.error("El archivo no tiene el formato de 14 casilleros.")
-            except Exception as e:
-                st.error(f"Error al leer el archivo: {e}")
-                st.markdown("---")
-with st.sidebar.expander("🔗 Sincronizar Google Sheet"):
-    url_google_sheet = st.text_input("Pega el enlace de tu Google Sheet:")
-    if st.button("📥 Importar y Sincronizar"):
-        if url_google_sheet:
-            nuevos_datos = sincronizar_google_sheet(url_google_sheet)
-            if nuevos_datos:
-                st.session_state["tabla_progol"] = nuevos_datos
-                st.success("¡Google Sheet sincronizado con éxito!")
-                st.rerun()
-        else:
-            st.warning("Ingresa un enlace válido.")
-
-# --- NUEVA FUNCIÓN: GENERADOR BOLSA GRANDE (ACUMULADO) ---
-import random
-
-
 def generar_boletos_bolsa_grande(n_boletos, df_partidos):
     """Genera N boletos con máximo 4 empates y de 2 a 3 sorpresas."""
     boletos_lista = []
@@ -1780,3 +1716,21 @@ def generar_boletos_bolsa_grande(n_boletos, df_partidos):
                 boletos_lista.append(ticket)
                 
     return boletos_lista
+
+if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado)":
+    st.subheader("🎯 Módulo Especializado: Bolsa Grande / Acumulado")
+    st.write("Genera boletos optimizados aplicando filtros estrictos: Máximo 4 empates y de 2 a 3 sorpresas científicas por boleto.")
+    
+    cant_bols = st.slider("¿Cuántos boletos deseas generar para este acumulado?", min_value=5, max_value=30, value=10, step=5)
+    
+    if st.button("🚀 Generar Matriz de Acumulado"):
+        if 'df_analisis' in locals() or 'df_analisis' in globals():
+            boletos_resultado = generar_boletos_bolsa_grande(cant_bols, df_analisis)
+            if boletos_resultado:
+                st.success(f"¡Se han generado {len(boletos_resultado)} boletos exitosamente con los filtros de Bolsa Grande!")
+                for i, bol in enumerate(boletos_resultado, 1):
+                    st.write(f"Boleto {i}: {bol}")
+            else:
+                st.warning("Intenta de nuevo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
+        else:
+            st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
