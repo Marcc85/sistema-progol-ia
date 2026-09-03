@@ -1722,3 +1722,42 @@ with st.sidebar.expander("🔗 Sincronizar Google Sheet"):
                 st.rerun()
         else:
             st.warning("Ingresa un enlace válido.")
+
+# --- NUEVA FUNCIÓN: GENERADOR BOLSA GRANDE (ACUMULADO) ---
+import random
+
+
+def generar_boletos_bolsa_grande(n_boletos, df_partidos):
+  """Genera N boletos con máximo 4 empates y de 2 a 3 sorpresas."""
+  boletos_lista = []
+  intentos = 0
+
+  while len(boletos_lista) < n_boletos and intentos < 3000:
+    intentos += 1
+    ticket = []
+    empates = 0
+    sorpresas = 0
+
+    for idx, row in df_partidos.iterrows():
+      # Tomamos la predicción base del análisis existente
+      base = str(row.get("Prediccion", "1"))
+      es_riesgo = str(row.get("Riesgo", "Bajo")) == "Alto"
+
+      eleccion = base
+      # Aplicar de 2 a 3 sorpresas controladas en partidos de riesgo
+      coles = random.random()
+      if es_riesgo and sorpresas < 3 and coles > 0.55:
+        eleccion = "2" if base == "1" else "X"
+        sorpresas += 1
+
+      if eleccion == "X":
+        empates += 1
+
+      ticket.append(eleccion)
+
+    # Restricción estricta: Máximo 4 empates y entre 2 y 3 sorpresas
+    if empates <= 4 and 2 <= sorpresas <= 3:
+      if ticket not in boletos_lista:
+        boletos_lista.append(ticket)
+
+  return boletos_lista
