@@ -68,6 +68,7 @@ st.markdown(
 # ------------------------------------------------------------------------------
 ARCHIVO_DISCO = "progol_captura_v7.json"
 ARCHIVO_CACHE_API = "progol_bigdata_cache.json"
+URL_GOOGLE_SHEET_DEFAULT = "https://docs.google.com/spreadsheets/d/1VnT4JtzK4LZZh8GDgM1NF8Oc59VWqJGe7S9eQi0FWcw/edit?gid=0#gid=0"
 
 OPCIONES_LIGAS = [
     "Liga MX",
@@ -1429,9 +1430,8 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
 # ------------------------------------------------------------------------------
 elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
     st.subheader("🎰 Generador de Matriz Reducida Optimizada")
-    st.caption("Distribución matemática reducida de 12 combinaciones para optimizar el volante cubriendo fijos inamovibles y dobles estratégicos.")
+    st.caption("Distribución matemática reducida de combinaciones para optimizar el volante cubriendo fijos inamovibles y dobles estratégicos.")
 
-    # Selector de 7 u 8 dobles
     cant_dobles_matriz = st.radio(
         "Configura la cantidad de Dobles para la Matriz:",
         [7, 8],
@@ -1441,7 +1441,6 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
     )
     cant_fijos_matriz = 14 - cant_dobles_matriz
 
-    # Matrices matemáticas reducidas estándar de 12 columnas (0 = Opción Principal, 1 = Cobertura)
     MATRIZ_7_DOBLES = [
         [0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 1, 1, 1, 1],
@@ -1488,7 +1487,6 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
         
         p_nombre = f"{loc} vs {vis}" if loc and vis else f"Casilla {num}"
 
-        # Regla del -140 para fijos
         es_fijo_l = ml is not None and ml <= -140
         es_fijo_v = mv is not None and mv <= -140
 
@@ -1504,10 +1502,8 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
             op1, op2 = "2", "2"
         else:
             tipo = "DOBLE"
-            # Criterio A: Partido abierto (Over negativo y Empate >= +265) -> Doble 1-2
             if ov is not None and ov < 0 and me is not None and me >= 265:
                 op1, op2 = "1", "2"
-            # Criterio B: Partido cerrado (Under negativo o Empate <= +215) -> Doble con Empate
             elif (und is not None and und < 0) or (me is not None and me <= 215):
                 if ml is not None and mv is not None and ml < mv:
                     op1, op2 = "1", "X"
@@ -1520,18 +1516,15 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
             "#": num, "Partido": p_nombre, "Tipo": tipo, "Op1": op1, "Op2": op2, "Score": score_firmeza
         })
 
-    # Balanceador exacto configurable de 7 a 8 dobles
     candidatos_dobles = [c for c in clasificados if c["Tipo"] == "DOBLE"]
     candidatos_fijos = [c for c in clasificados if c["Tipo"] == "FIJO"]
 
     if len(candidatos_dobles) > cant_dobles_matriz:
-        # Si sobran dobles, los de menor incertidumbre se convierten a fijos
         candidatos_dobles.sort(key=lambda x: x["Score"], reverse=True)
         transferir = candidatos_dobles[:(len(candidatos_dobles) - cant_dobles_matriz)]
         for t in transferir:
             t["Tipo"] = "FIJO"
     elif len(candidatos_dobles) < cant_dobles_matriz:
-        # Si faltan dobles, los fijos menos contundentes se cubren con doble
         candidatos_fijos.sort(key=lambda x: x["Score"])
         transferir = candidatos_fijos[:(cant_dobles_matriz - len(candidatos_dobles))]
         for t in transferir:
@@ -1550,8 +1543,9 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
 
     partidos_con_datos = [c for c in clasificados if c["Partido"] != f"Casilla {c['#']}"]
     if len(partidos_con_datos) == 14:
-        boletos_12 = []
-        for b_idx in range(12):
+        total_boletos = len(matriz_activa)
+        boletos_generados = []
+        for b_idx in range(total_boletos):
             fila_boleto = []
             d_idx = 0
             for c in clasificados:
@@ -1561,35 +1555,37 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
                 else:
                     pick = c["Op1"]
                 fila_boleto.append(pick)
-            boletos_12.append(fila_boleto)
+            boletos_generados.append(fila_boleto)
 
-        col_nombres = [f"Boleto {i+1}" for i in range(12)]
-        df_matriz_final = pd.DataFrame(boletos_12, index=col_nombres).T
+        col_nombres = [f"Boleto {i+1}" for i in range(total_boletos)]
+        df_matriz_final = pd.DataFrame(boletos_generados, index=col_nombres).T
         df_matriz_final.index = [f"#{c['#']} {c['Partido']} ({c['Tipo']})" for c in clasificados]
+
+        st.session_state["df_boletos_exportar"] = df_matriz_final
 
         st.dataframe(df_matriz_final, width="stretch")
 
         st.divider()
         st.subheader("📱 Boletos Individuales para Llenado Rápido")
-        tabs_bol = st.tabs([f"Boleto #{i+1}" for i in range(12)])
+        tabs_bol = st.tabs([f"Boleto #{i+1}" for i in range(total_boletos)])
         for i, tab in enumerate(tabs_bol):
             with tab:
                 df_b = pd.DataFrame({
                     "Casilla": [f"#{j+1}" for j in range(14)],
                     "Partido": [clasificados[j]["Partido"] for j in range(14)],
                     "Tipo": [clasificados[j]["Tipo"] for j in range(14)],
-                    "Pronóstico": boletos_12[i]
+                    "Pronóstico": boletos_generados[i]
                 })
                 st.dataframe(df_b, width="stretch", height=480)
     else:
-        st.info("Ingresa los 14 partidos y momios en el Módulo 8 para visualizar los 12 boletos generados.")
+        st.info("Ingresa los 14 partidos y momios en el Módulo 8 para visualizar los boletos generados.")
 
 # ------------------------------------------------------------------------------
-# MÓDULO 8: CAPTURA Y EDICIÓN (CON SISTEMA ANTI-APAGÓN)
+# MÓDULO 8: CAPTURA Y EDICIÓN (CONECTADO FIJO A GOOGLE SHEETS)
 # ------------------------------------------------------------------------------
 elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     st.subheader("Edición de Quiniela Manual (Celda a Celda)")
-    st.info("💡 Captura momios y líneas. Al terminar de capturar, usa los botones de respaldo de abajo para proteger tus datos contra reinicios del servidor.")
+    st.info("💡 Captura momios y líneas. Al terminar, usa las opciones de sincronización con tu Google Sheet o descarga un reporte completo.")
 
     df_cap_edit = pd.DataFrame(st.session_state["tabla_progol"])
     
@@ -1624,7 +1620,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     )
 
     st.write("")
-    col_c1, col_c2, col_c3 = st.columns([2.5, 2.5, 3])
+    col_c1, col_c2, _ = st.columns([2.5, 2.5, 5])
     
     with col_c1:
         if st.button("💾 Guardar Cambios en Servidor", type="primary"):
@@ -1642,16 +1638,128 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             guardar_cache_api({})
             st.rerun()
 
-    # ZONA DE RESPALDO Y CARGA ANTI-APAGÓN
+    # --------------------------------------------------------------------------
+    # ZONA 1: CONEXIÓN VÍA GOOGLE SHEETS (ENLACE OFICIAL FIJO)
+    # --------------------------------------------------------------------------
     st.divider()
-    st.subheader("🛡️ Respaldo Permanente Anti-Apagón de Streamlit")
-    st.caption("Usa estos botones para guardar tu quiniela en tu celular o PC. Si la app se duerme o se borra, solo sube tu respaldo y listo.")
+    st.subheader("🌐 Sincronización Directa con tu Google Sheet")
+    st.caption("Conexión activa permanente a tu archivo oficial en Google Drive.")
 
+    gsheets_url = st.text_input(
+        "URL vinculada de tu Google Sheet:",
+        value=URL_GOOGLE_SHEET_DEFAULT,
+        key="input_gsheets_url"
+    )
+
+    if st.button("🔄 Cargar datos desde Google Sheets", type="primary", use_container_width=True):
+        if not gsheets_url.strip():
+            st.warning("Ingresa la URL de tu Google Sheet arriba para sincronizar.")
+        else:
+            try:
+                if "/edit" in gsheets_url:
+                    csv_export_url = gsheets_url.split("/edit")[0] + "/export?format=csv"
+                else:
+                    csv_export_url = gsheets_url
+                
+                df_gsheet = pd.read_csv(csv_export_url)
+                datos_nuevos = []
+                for idx in range(14):
+                    if idx < len(df_gsheet):
+                        row_g = df_gsheet.iloc[idx].to_dict()
+                        datos_nuevos.append({
+                            "#": idx + 1,
+                            "Liga": str(row_g.get("Liga", "Liga MX") or "Liga MX").strip(),
+                            "Local": str(row_g.get("Local", "") or "").strip(),
+                            "Visita": str(row_g.get("Visita", "") or "").strip(),
+                            "Momio Local": str(row_g.get("Momio Local", "") or "").strip(),
+                            "Momio Empate": str(row_g.get("Momio Empate", "") or "").strip(),
+                            "Momio Visitante": str(row_g.get("Momio Visitante", "") or "").strip(),
+                            "Over 2.5": str(row_g.get("Over 2.5", "") or "").strip(),
+                            "Under 2.5": str(row_g.get("Under 2.5", "") or "").strip(),
+                            "Apertura Local": str(row_g.get("Apertura Local", "") or "").strip(),
+                            "Apertura Empate": str(row_g.get("Apertura Empate", "") or "").strip(),
+                            "Apertura Visitante": str(row_g.get("Apertura Visitante", "") or "").strip()
+                        })
+                    else:
+                        datos_nuevos.append(TABLA_EN_BLANCO[idx])
+
+                st.session_state["tabla_progol"] = datos_nuevos
+                guardar_disco(datos_nuevos)
+                st.success("✅ ¡14 casilleros leídos y cargados con éxito desde Google Sheets!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"No se pudo leer la hoja. Asegúrate de que el enlace en Google Drive tenga permisos de lectura ('Cualquier persona con el enlace'). Detalle: {e}")
+
+    # --------------------------------------------------------------------------
+    # ZONA 2: RESPALDO INDEPENDIENTE EN EXCEL MULTI-PESTAÑA (SIN GOOGLE DRIVE)
+    # --------------------------------------------------------------------------
+    st.divider()
+    st.subheader("📊 Reporte y Respaldo en Excel (.xlsx)")
+    st.caption("Si no tienes acceso a Google Drive, puedes descargar o subir el archivo Excel con todas las pestañas de análisis y boletos.")
+
+    col_ex1, col_ex2 = st.columns(2)
+    with col_ex1:
+        buffer_excel = io.BytesIO()
+        with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
+            df_cap_actual = pd.DataFrame(st.session_state["tabla_progol"])
+            df_cap_actual.to_excel(writer, sheet_name="CAPTURA_Y_ANALISIS", index=False)
+            
+            if "df_boletos_exportar" in st.session_state:
+                st.session_state["df_boletos_exportar"].to_excel(writer, sheet_name="MIS_BOLETOS")
+            else:
+                pd.DataFrame({"Aviso": ["Genera la matriz en el Módulo 7 para exportar boletos."]}).to_excel(writer, sheet_name="MIS_BOLETOS", index=False)
+
+        st.download_button(
+            label="📥 Descargar Reporte Completo (.xlsx)",
+            data=buffer_excel.getvalue(),
+            file_name="Progol_Reporte_Maestro.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+
+    with col_ex2:
+        archivo_excel_subido = st.file_uploader("📤 Restaurar desde Excel (.xlsx)", type=["xlsx"], label_visibility="collapsed")
+        if archivo_excel_subido is not None:
+            try:
+                df_ex = pd.read_excel(archivo_excel_subido, sheet_name=0)
+                datos_ex = []
+                for idx in range(14):
+                    if idx < len(df_ex):
+                        r = df_ex.iloc[idx].to_dict()
+                        datos_ex.append({
+                            "#": idx + 1,
+                            "Liga": str(r.get("Liga", "Liga MX") or "Liga MX").strip(),
+                            "Local": str(r.get("Local", "") or "").strip(),
+                            "Visita": str(r.get("Visita", "") or "").strip(),
+                            "Momio Local": str(r.get("Momio Local", "") or "").strip(),
+                            "Momio Empate": str(r.get("Momio Empate", "") or "").strip(),
+                            "Momio Visitante": str(r.get("Momio Visitante", "") or "").strip(),
+                            "Over 2.5": str(r.get("Over 2.5", "") or "").strip(),
+                            "Under 2.5": str(r.get("Under 2.5", "") or "").strip(),
+                            "Apertura Local": str(r.get("Apertura Local", "") or "").strip(),
+                            "Apertura Empate": str(r.get("Apertura Empate", "") or "").strip(),
+                            "Apertura Visitante": str(r.get("Apertura Visitante", "") or "").strip()
+                        })
+                    else:
+                        datos_ex.append(TABLA_EN_BLANCO[idx])
+                
+                st.session_state["tabla_progol"] = datos_ex
+                guardar_disco(datos_ex)
+                st.success("✅ ¡Quiniela cargada con éxito desde el archivo Excel!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error al procesar el archivo Excel: {e}")
+
+    # --------------------------------------------------------------------------
+    # ZONA 3: RESPALDO RÁPIDO JSON
+    # --------------------------------------------------------------------------
+    st.divider()
+    st.subheader("🛡️ Respaldo Rápido (.json)")
     col_r1, col_r2 = st.columns(2)
     with col_r1:
         datos_actuales_json = json.dumps(st.session_state["tabla_progol"], ensure_ascii=False, indent=2)
         st.download_button(
-            label="📥 Descargar Respaldo de Quiniela (.json)",
+            label="📥 Descargar Respaldo (.json)",
             data=datos_actuales_json,
             file_name="progol_respaldo.json",
             mime="application/json",
@@ -1666,7 +1774,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
                 if isinstance(datos_restaurados, list) and len(datos_restaurados) == 14:
                     st.session_state["tabla_progol"] = datos_restaurados
                     guardar_disco(datos_restaurados)
-                    st.success("✅ ¡Quiniela restaurada con éxito! Todos tus datos están de vuelta.")
+                    st.success("✅ ¡Quiniela restaurada con éxito desde JSON!")
                     st.rerun()
                 else:
                     st.error("El archivo no tiene el formato de 14 casilleros.")
