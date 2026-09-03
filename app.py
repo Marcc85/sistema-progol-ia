@@ -64,25 +64,52 @@ st.markdown(
 )
 
 # ------------------------------------------------------------------------------
-# 1. ARCHIVOS DE DISCO Y URL DE GOOGLE SHEETS OFICIAL
+# 1. ARCHIVOS DE DISCO Y LISTA COMPLETA DE LIGAS, COPAS Y AMISTOSOS
 # ------------------------------------------------------------------------------
 ARCHIVO_DISCO = "progol_captura_v7.json"
 ARCHIVO_CACHE_API = "progol_bigdata_cache.json"
 URL_GOOGLE_SHEET_DEFAULT = "https://docs.google.com/spreadsheets/d/1VnT4JtzK4LZZh8GDgM1NF8Oc59VWqJGe7S9eQi0FWcw/edit?gid=0#gid=0"
 
 OPCIONES_LIGAS = [
-    "Liga MX", "Liga MX Femenil", "MLS", "NWSL (USA Femenil)",
-    "Liga Chilena (Primera División)", "Copa Chile", "Supercopa de Chile",
-    "Amistoso / Club Friendlies", "Amistoso Internacional (Selecciones)",
-    "Premier League", "FA Cup (Inglaterra)", "EFL Cup / Carabao Cup (Inglaterra)",
-    "Championship (Inglaterra 2da)", "Community Shield (Inglaterra)",
-    "La Liga (España)", "Copa del Rey (España)", "Liga F (España Femenil)",
-    "Serie A (Italia)", "Coppa Italia", "Bundesliga (Alemania)", "DFB Pokal (Alemania)",
-    "Ligue 1 (Francia)", "Coupe de France", "Liga Argentina", "Copa Argentina",
-    "Primeira Liga (Portugal)", "Taça de Portugal", "Jupiler Pro League (Bélgica)",
-    "Champions League", "Champions League Femenil", "Europa League", "Leagues Cup",
-    "Concacaf Champions Cup", "Copa Libertadores", "Copa Sudamericana",
-    "Brasileirão", "Copa do Brasil", "Eredivisie (Holanda)", "Otra / Automático"
+    "Liga MX",
+    "Liga MX Femenil",
+    "MLS",
+    "NWSL (USA Femenil)",
+    "Liga Chilena (Primera División)",
+    "Copa Chile",
+    "Supercopa de Chile",
+    "Amistoso / Club Friendlies",
+    "Amistoso Internacional (Selecciones)",
+    "Premier League",
+    "FA Cup (Inglaterra)",
+    "EFL Cup / Carabao Cup (Inglaterra)",
+    "Championship (Inglaterra 2da)",
+    "Community Shield (Inglaterra)",
+    "La Liga (España)",
+    "Copa del Rey (España)",
+    "Liga F (España Femenil)",
+    "Serie A (Italia)",
+    "Coppa Italia",
+    "Bundesliga (Alemania)",
+    "DFB Pokal (Alemania)",
+    "Ligue 1 (Francia)",
+    "Coupe de France",
+    "Liga Argentina",
+    "Copa Argentina",
+    "Primeira Liga (Portugal)",
+    "Taça de Portugal",
+    "Jupiler Pro League (Bélgica)",
+    "Champions League",
+    "Champions League Femenil",
+    "Europa League",
+    "Leagues Cup",
+    "Concacaf Champions Cup",
+    "Copa Libertadores",
+    "Copa Sudamericana",
+    "Brasileirão",
+    "Copa do Brasil",
+    "Eredivisie (Holanda)",
+    "Otra / Automático"
 ]
 
 TABLA_EN_BLANCO = [
@@ -104,14 +131,84 @@ TABLA_EN_BLANCO = [
 ]
 
 MAPA_LIGAS_ID = {
-    "liga chilena (primera división)": 265, "chile": 265, "copa chile": 266,
-    "amistoso / club friendlies": 667, "premier league": 39, "inglaterra": 39,
-    "fa cup (inglaterra)": 45, "efl cup / carabao cup (inglaterra)": 48,
-    "liga mx": 262, "mexico": 262, "liga mx femenil": 264, "mls": 253,
-    "la liga (españa)": 140, "españa": 140, "copa del rey (españa)": 143,
-    "serie a (italia)": 135, "italia": 135, "bundesliga (alemania)": 78,
-    "ligue 1 (francia)": 61, "liga argentina": 128, "brasileirão": 71,
-    "champions league": 2, "europa league": 3, "copa libertadores": 13
+    "liga chilena (primera división)": 265,
+    "liga chilena": 265,
+    "primera division chile": 265,
+    "chile": 265,
+    "copa chile": 266,
+    "supercopa de chile": 267,
+    "amistoso / club friendlies": 667,
+    "amistoso": 667,
+    "amistosos": 667,
+    "club friendlies": 667,
+    "friendlies": 667,
+    "amistoso internacional (selecciones)": 10,
+    "amistoso internacional": 10,
+    "premier league": 39,
+    "premier": 39,
+    "inglaterra": 39,
+    "fa cup (inglaterra)": 45,
+    "fa cup": 45,
+    "efl cup / carabao cup (inglaterra)": 48,
+    "efl cup": 48,
+    "carabao cup": 48,
+    "championship (inglaterra 2da)": 40,
+    "championship": 40,
+    "community shield (inglaterra)": 528,
+    "community shield": 528,
+    "liga mx": 262,
+    "mexico": 262,
+    "liga mx femenil": 264,
+    "mls": 253,
+    "major league soccer": 253,
+    "nwsl (usa femenil)": 254,
+    "nwsl": 254,
+    "leagues cup": 848,
+    "concacaf champions cup": 16,
+    "concacaf": 16,
+    "la liga (españa)": 140,
+    "la liga": 140,
+    "laliga": 140,
+    "españa": 140,
+    "copa del rey (españa)": 143,
+    "copa del rey": 143,
+    "liga f (españa femenil)": 142,
+    "serie a (italia)": 135,
+    "serie a": 135,
+    "italia": 135,
+    "coppa italia": 137,
+    "bundesliga (alemania)": 78,
+    "bundesliga": 78,
+    "alemania": 78,
+    "dfb pokal (alemania)": 81,
+    "dfb pokal": 81,
+    "ligue 1 (francia)": 61,
+    "ligue 1": 61,
+    "francia": 61,
+    "coupe de france": 66,
+    "liga argentina": 128,
+    "argentina": 128,
+    "copa argentina": 130,
+    "brasileirão": 71,
+    "brasil": 71,
+    "copa do brasil": 73,
+    "copa libertadores": 13,
+    "libertadores": 13,
+    "copa sudamericana": 11,
+    "sudamericana": 11,
+    "primeira liga (portugal)": 94,
+    "primeira liga": 94,
+    "portugal": 94,
+    "taça de portugal": 96,
+    "jupiler pro league (bélgica)": 144,
+    "jupiler pro league": 144,
+    "belgica": 144,
+    "eredivisie (holanda)": 88,
+    "eredivisie": 88,
+    "champions league": 2,
+    "champions": 2,
+    "champions league femenil": 5,
+    "europa league": 3
 }
 
 def cargar_disco():
@@ -165,7 +262,7 @@ if "menu_activo" not in st.session_state:
     st.session_state["menu_activo"] = "📊 1. ANÁLISIS 1 (Excel)"
 
 # ------------------------------------------------------------------------------
-# 2. MOTOR API-SPORTS Y MATEMÁTICAS
+# 2. MOTOR DINÁMICO API-SPORTS
 # ------------------------------------------------------------------------------
 class MotorAPISportsUltra:
     BASE_URL = "https://v3.football.api-sports.io"
@@ -176,18 +273,57 @@ class MotorAPISportsUltra:
         return {"x-apisports-key": api_key}
 
     @classmethod
-    def buscar_equipo_dinamico(cls, nombre_equipo: str):
-        if not nombre_equipo or not str(nombre_equipo).strip(): return None
+    def resolver_league_id(cls, liga_str: str):
+        if not liga_str: return None
+        return MAPA_LIGAS_ID.get(str(liga_str).lower().strip(), None)
+
+    @classmethod
+    def buscar_equipo_dinamico(cls, nombre_equipo: str, liga_nombre: str = None):
+        if not nombre_equipo or not str(nombre_equipo).strip():
+            return None
+        
+        q = str(nombre_equipo).strip()
         try:
             url = f"{cls.BASE_URL}/teams"
-            res = requests.get(url, headers=cls._get_headers(), params={"search": str(nombre_equipo).strip()}, timeout=8)
+            res = requests.get(url, headers=cls._get_headers(), params={"search": q}, timeout=8)
             data = res.json().get("response", [])
             if data:
                 t = data[0].get("team", {})
-                return {"id": int(t.get("id")), "nombre": t.get("name"), "pais": t.get("country", "")}
+                return {
+                    "id": int(t.get("id")),
+                    "nombre": t.get("name"),
+                    "pais": t.get("country", "")
+                }
         except Exception:
             pass
         return None
+
+    @classmethod
+    def obtener_ultimos_partidos(cls, team_id: int):
+        try:
+            url = f"{cls.BASE_URL}/fixtures"
+            res = requests.get(url, headers=cls._get_headers(), params={"team": team_id, "last": 10}, timeout=8)
+            data = res.json().get("response", [])
+            partidos = []
+            for item in data:
+                fix = item.get("fixture", {})
+                teams = item.get("teams", {})
+                goals = item.get("goals", {})
+                gh = goals.get("home", 0) or 0
+                ga = goals.get("away", 0) or 0
+                is_home = (teams.get("home", {}).get("id") == team_id)
+                res_letra = "🟩 G" if (gh > ga if is_home else ga > gh) else ("🟥 P" if (gh < ga if is_home else ga < gh) else "🟨 E")
+                partidos.append({
+                    "Fecha": fix.get("date", "")[:10],
+                    "Res": res_letra,
+                    "Rival": teams.get("away" if is_home else "home", {}).get("name", ""),
+                    "Score": f"{gh}-{ga}",
+                    "gf": gh if is_home else ga,
+                    "gc": ga if is_home else gh
+                })
+            return pd.DataFrame(partidos)
+        except Exception:
+            return pd.DataFrame()
 
     @classmethod
     def obtener_h2h(cls, id1: int, id2: int):
@@ -213,6 +349,9 @@ class MotorAPISportsUltra:
         except Exception:
             return pd.DataFrame()
 
+# ------------------------------------------------------------------------------
+# 3. FÓRMULAS MATEMÁTICAS Y PROCESAMIENTO
+# ------------------------------------------------------------------------------
 def limpiar_momio(val):
     if val is None: return None
     v = str(val).replace("+", "").replace("$", "").replace(",", "").strip()
@@ -246,7 +385,6 @@ def procesar_fila(row):
     s = pl + pe + pv
     pl_n, pe_n, pv_n = (pl/s*100), (pe/s*100), (pv/s*100)
 
-    # Columna L: Smart Money automático
     smart = "Estable"
     if ol and oe and ov:
         pol, poe, pov = calcular_prob(ol), calcular_prob(oe), calcular_prob(ov)
@@ -256,7 +394,6 @@ def procesar_fila(row):
         if diff_l >= 3.5: smart = f"🔥 Dinero a Local (+{diff_l:.1f}%)"
         elif diff_v >= 3.5: smart = f"🔥 Dinero a Visita (+{diff_v:.1f}%)"
 
-    # Columna M: PRO Line Alert automático (-140)
     alerta_pro = "Estable"
     if ol and ml:
         if ol > -140 and ml <= -140: alerta_pro = "🔥 Fijo Activado (Local <= -140)"
@@ -278,10 +415,11 @@ def procesar_fila(row):
     }
 
 # ------------------------------------------------------------------------------
-# 3. INTERFAZ DE NAVEGACIÓN
+# 4. NAVEGACIÓN Y ENCABEZADO
 # ------------------------------------------------------------------------------
 st.title("⚽ Centro de Mando Progol v4.0 Ultra")
 df_analisis = pd.DataFrame([procesar_fila(r) for r in st.session_state["tabla_progol"]])
+
 partidos_validos = [p for p in df_analisis[df_analisis["Clasificación Partido"] != "EN ESPERA"]["Partido"].tolist() if p != "-"]
 
 modulos = [
@@ -304,7 +442,7 @@ for j in range(4):
 st.divider()
 
 # ------------------------------------------------------------------------------
-# 4. CONTENIDO DE MÓDULOS
+# 5. CONTENIDO
 # ------------------------------------------------------------------------------
 if st.session_state["menu_activo"] == "📊 1. ANÁLISIS 1 (Excel)":
     st.subheader("Tabla Maestra de Análisis Cuantitativo (14 Partidos)")
@@ -350,6 +488,8 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports":
                 else:
                     df_h_show = df_h
                 st.dataframe(df_h_show[["Fecha", "Torneo", "Local", "Resultado", "Visita"]], width="stretch")
+            else:
+                st.info("Sin registros H2H disponibles.")
     else:
         st.info("Captura primero partidos en el Módulo 8.")
 
@@ -360,7 +500,8 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
 
 elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     st.subheader("Edición de Quiniela Manual y Sincronización")
-    st.info("💡 Captura o sincroniza desde tu Google Sheet. Las columnas L (Smart Money) y M (PRO Line Alert) se calculan automáticamente.")
+    
+    st.info("💡 Puedes capturar manualmente abajo o importar directamente desde tu Google Sheet oficial.")
     
     df_cap = pd.DataFrame(st.session_state["tabla_progol"])
     grid = st.data_editor(
@@ -387,52 +528,36 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             st.rerun()
 
     st.divider()
-    st.subheader("🌐 Sincronización Directa con Google Sheets")
+    st.subheader("🌐 Conexión Directa a Google Sheets")
     st.text_input("URL Vinculada:", value=URL_GOOGLE_SHEET_DEFAULT, disabled=True)
     
-    col_g1, col_g2 = st.columns(2)
-    with col_g1:
-        if st.button("🔄 Cargar datos desde Google Sheets", type="primary", use_container_width=True):
-            try:
-                csv_url = URL_GOOGLE_SHEET_DEFAULT.split("/edit")[0] + "/export?format=csv"
-                df_g = pd.read_csv(csv_url)
-                nuevos = []
-                for i in range(14):
-                    if i < len(df_g):
-                        r = df_g.iloc[i].to_dict()
-                        nuevos.append({
-                            "#": i + 1,
-                            "Liga": str(r.get("Liga", "Liga MX") or "Liga MX").strip(),
-                            "Local": str(r.get("Local", "") or "").strip(),
-                            "Visita": str(r.get("Visita", "") or "").strip(),
-                            "Momio Local": str(r.get("Momio Local", "") or "").strip(),
-                            "Momio Empate": str(r.get("Momio Empate", "") or "").strip(),
-                            "Momio Visitante": str(r.get("Momio Visitante", "") or "").strip(),
-                            "Over 2.5": str(r.get("Over 2.5", "") or "").strip(),
-                            "Under 2.5": str(r.get("Under 2.5", "") or "").strip(),
-                            "Apertura Local": str(r.get("Apertura Local", "") or "").strip(),
-                            "Apertura Empate": str(r.get("Apertura Empate", "") or "").strip(),
-                            "Apertura Visitante": str(r.get("Apertura Visitante", "") or "").strip()
-                        })
-                    else:
-                        nuevos.append(TABLA_EN_BLANCO[i])
-                st.session_state["tabla_progol"] = nuevos
-                guardar_disco(nuevos)
-                st.success("✅ ¡14 casilleros importados exitosamente desde Google Sheets!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error al leer Google Sheets: {e}. Asegúrate de que el documento tenga permisos de lectura públicos.")
-
-    with col_g2:
-        # Generar reporte completo en Excel (.xlsx) incluyendo Smart Money y PRO Line Alert
-        buffer_excel = io.BytesIO()
-        with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
-            df_analisis.to_excel(writer, sheet_name="ANALISIS_Y_COL_L_M", index=False)
-        
-        st.download_button(
-            label="📥 Descargar Reporte con Columnas L y M (.xlsx)",
-            data=buffer_excel.getvalue(),
-            file_name="Progol_Reporte_Con_Alertas.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+    if st.button("🔄 Cargar datos desde Google Sheets", type="primary", use_container_width=True):
+        try:
+            csv_url = URL_GOOGLE_SHEET_DEFAULT.split("/edit")[0] + "/export?format=csv"
+            df_g = pd.read_csv(csv_url)
+            nuevos = []
+            for i in range(14):
+                if i < len(df_g):
+                    r = df_g.iloc[i].to_dict()
+                    nuevos.append({
+                        "#": i + 1,
+                        "Liga": str(r.get("Liga", "Liga MX") or "Liga MX").strip(),
+                        "Local": str(r.get("Local", "") or "").strip(),
+                        "Visita": str(r.get("Visita", "") or "").strip(),
+                        "Momio Local": str(r.get("Momio Local", "") or "").strip(),
+                        "Momio Empate": str(r.get("Momio Empate", "") or "").strip(),
+                        "Momio Visitante": str(r.get("Momio Visitante", "") or "").strip(),
+                        "Over 2.5": str(r.get("Over 2.5", "") or "").strip(),
+                        "Under 2.5": str(r.get("Under 2.5", "") or "").strip(),
+                        "Apertura Local": str(r.get("Apertura Local", "") or "").strip(),
+                        "Apertura Empate": str(r.get("Apertura Empate", "") or "").strip(),
+                        "Apertura Visitante": str(r.get("Apertura Visitante", "") or "").strip()
+                    })
+                else:
+                    nuevos.append(TABLA_EN_BLANCO[i])
+            st.session_state["tabla_progol"] = nuevos
+            guardar_disco(nuevos)
+            st.success("✅ ¡14 casilleros importados exitosamente desde Google Sheets!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error al leer Google Sheets: {e}. Asegúrate de que el documento esté compartido como 'Cualquier persona con el enlace'.")
