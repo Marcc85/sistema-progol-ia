@@ -1681,24 +1681,41 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             guardar_cache_api({})
             st.rerun()
 
-    if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado)":
-    st.subheader("🎯 Módulo Especializado: Bolsa Grande / Acumulado")
-    st.write("Genera boletos optimizados aplicando filtros estrictos: Máximo 4 empates y de 2 a 3 sorpresas científicas por boleto.")
-    
-    cant_bols = st.slider("¿Cuántos boletos deseas generar para este acumulado?", min_value=5, max_value=30, value=10, step=5)
-    
-    if st.button("🚀 Generar Matriz de Acumulado"):
-        if 'df_analisis' in locals() or 'df_analisis' in globals():
-            boletos_resultado = generar_boletos_bolsa_grande(cant_bols, df_analisis)
-            if boletos_resultado:
-                st.success(f"¡Se han generado {len(boletos_resultado)} boletos exitosamente con los filtros de Bolsa Grande!")
-                for i, bol in enumerate(boletos_resultado, 1):
-                    st.write(f"Boleto {i}: {bol}")
-            else:
-                st.warning("Intenta de nuevo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
-        else:
-            st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
+   if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado)":
+  st.subheader("🎯 Módulo Especializado: Bolsa Grande / Acumulado")
+  st.write(
+      "Genera boletos optimizados aplicando filtros estrictos: Máximo 4"
+      " empates y de 2 a 3 sorpresas científicas por boleto."
+  )
 
+  cant_bols = st.slider(
+      "¿Cuántos boletos deseas generar para este acumulado?",
+      min_value=5,
+      max_value=30,
+      value=10,
+      step=5,
+  )
+
+  if st.button("🚀 Generar Matriz de Acumulado"):
+    if "df_analisis" in locals() or "df_analisis" in globals():
+      boletos_resultado = generar_boletos_bolsa_grande(cant_bols, df_analisis)
+      if boletos_resultado:
+        st.success(
+            f"¡Se han generado {len(boletos_resultado)} boletos exitosamente"
+            " con los filtros de Bolsa Grande!"
+        )
+        for i, bol in enumerate(boletos_resultado, 1):
+          st.write(f"Boleto {i}: {bol}")
+      else:
+        st.warning(
+            "Intenta de nuevo o ajusta ligeramente tus parámetros para"
+            " encontrar combinaciones exactas."
+        )
+    else:
+      st.info(
+          "Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar"
+          " los partidos."
+      )
     # ZONA DE RESPALDO Y CARGA ANTI-APAGÓN
     st.divider()
     st.subheader("🛡️ Respaldo Permanente Anti-Apagón de Streamlit")
