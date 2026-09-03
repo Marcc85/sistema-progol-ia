@@ -1684,7 +1684,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             st.session_state["api_cache_xg"] = {}
             guardar_cache_api({})
             st.rerun()
-
+import random
 def generar_boletos_bolsa_grande(n_boletos, df_partidos):
     """Genera N boletos con máximo 4 empates y de 2 a 3 sorpresas."""
     boletos_lista = []
