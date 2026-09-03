@@ -113,7 +113,35 @@ import requests
 # Función profesional: Descarga en automático CUALQUIER liga o copa del mundo desde la API-Sports
 @st.cache_data(ttl=86400)
 def cargar_catalogo_global_ligas():
-    return MAPA_LIGAS_ID
+    return {
+        "Liga MX (Mexico)": 262,
+        "Premier League (England)": 39,
+        "La Liga (Spain)": 140,
+        "Serie A (Italy)": 135,
+        "Bundesliga (Germany)": 78,
+        "Ligue 1 (France)": 61,
+        "Champions League (World)": 2,
+        "Copa Libertadores (South America)": 13,
+        "MLS (USA)": 253,
+        "Primeira Liga (Portugal)": 94,
+        "Eredivisie (Netherlands)": 88,
+        "Liga Profesional (Argentina)": 128,
+        "Brasileirao (Brazil)": 71,
+        "Primera División (Chile)": 265,
+        "Copa Chile (Chile)": 266,
+        "Supercopa de Chile (Chile)": 267,
+        "Amistosos / Club Friendlies (World)": 667,
+        "FA Cup (England)": 45,
+        "EFL Cup (England)": 48,
+        "Championship (England)": 40,
+        "Copa del Rey (Spain)": 143,
+        "Coppa Italia (Italy)": 137,
+        "DFB Pokal (Germany)": 81,
+        "Coupe de France (France)": 66,
+        "Copa Argentina (Argentina)": 130,
+        "Copa do Brasil (Brazil)": 73,
+        "Copa Sudamericana (South America)": 11
+    }
 
 LIGAS_IDS_API = cargar_catalogo_global_ligas()
 OPCIONES_LIGAS = sorted(list(LIGAS_IDS_API.keys()))
