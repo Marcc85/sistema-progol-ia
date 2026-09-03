@@ -1652,6 +1652,28 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
                 required=True,
                 default="Liga MX"
             ),
+            "Local": st.column_config.SelectboxColumn(
+            "Local",
+            help="Selecciona el equipo local oficial",
+            options=[
+                "Club América", "Monterrey", "Tigres UANL", "Cruz Azul", "Toluca",
+                "Pachuca", "Chivas Guadalajara", "Pumas UNAM", "Atlas", "Santos Laguna",
+                "Club León", "Puebla", "Querétaro", "Juárez", "Mazatlán",
+                "Tijuana", "Necaxa", "Atlético San Luis"
+            ],
+            required=True,
+        ),
+        "Visita": st.column_config.SelectboxColumn(
+            "Visita",
+            help="Selecciona el equipo visitante oficial",
+            options=[
+                "Club América", "Monterrey", "Tigres UANL", "Cruz Azul", "Toluca",
+                "Pachuca", "Chivas Guadalajara", "Pumas UNAM", "Atlas", "Santos Laguna",
+                "Club León", "Puebla", "Querétaro", "Juárez", "Mazatlán",
+                "Tijuana", "Necaxa", "Atlético San Luis"
+            ],
+            required=True,
+        ),
             "Over 2.5": st.column_config.TextColumn(
                 "Más 2.5 (Over)",
                 help="Momio para Más de 2.5 goles (ej: -150 o +120)"
