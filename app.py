@@ -424,7 +424,6 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
                 st.error(f"Error al leer Google Sheets: {e}. Asegúrate de que el documento tenga permisos de lectura públicos.")
 
     with col_g2:
-        # Generar reporte completo en Excel (.xlsx) incluyendo Smart Money y PRO Line Alert
         buffer_excel = io.BytesIO()
         with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
             df_analisis.to_excel(writer, sheet_name="ANALISIS_Y_COL_L_M", index=False)
