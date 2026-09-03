@@ -142,6 +142,30 @@ def cargar_catalogo_global_ligas():
         "Copa do Brasil (Brazil)": 73,
         "Copa Sudamericana (South America)": 11
     }
+    @st.cache_data(ttl=86400)
+def obtener_equipos_api(league_id):
+    url = "https://v3.football.api-sports.io/teams"
+    headers = {
+        "x-rapidapi-key": st.secrets.get("API_KEY", "TU_API_KEY_AQUI"),
+        "x-rapidapi-host": "v3.football.api-sports.io"
+    }
+    params = {"league": league_id, "season": 2026}
+    
+    diccionario_equipos = {}
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json().get("response", [])
+            for item in data:
+                team_info = item.get("team", {})
+                team_name = team_info.get("name")
+                team_id = team_info.get("id")
+                if team_name and team_id:
+                    diccionario_equipos[team_name.lower().strip()] = team_id
+    except Exception:
+        pass
+        
+    return diccionario_equipos
 
 LIGAS_IDS_API = cargar_catalogo_global_ligas()
 OPCIONES_LIGAS = sorted(list(LIGAS_IDS_API.keys()))
