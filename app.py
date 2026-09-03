@@ -12,6 +12,48 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+st.set_page_config(
+        page_title="Centro de Mando Progol v4.0 Ultra",
+        page_icon="🌐",
+        layout="wide",
+        initial_sidebar_state="collapsed"
+    )
+
+def sincronizar_google_sheet(url_sheet):
+    try:
+        if "/edit" in url_sheet:
+            url_csv = url_sheet.split("/edit")[0] + "/export?format=csv"
+        else:
+            url_csv = url_sheet
+
+        df_gs = pd.read_csv(url_csv)
+        
+        datos_sincronizados = []
+        for index, row in df_gs.head(14).iterrows():
+            partido_dict = {
+                "#": index + 1,
+                "Liga": str(row.get("Liga", "Liga MX")),
+                "Local": str(row.get("Local", "")).strip().title(),
+                "Visita": str(row.get("Visita", "")).strip().title(),
+                "Momio Local": str(row.get("Momio Local", "")),
+                "Momio Empate": str(row.get("Momio Empate", "")),
+                "Momio Visitante": str(row.get("Momio Visitante", "")),
+                "Apertura Local": str(row.get("Apertura Local", "")),
+                "Apertura Empate": str(row.get("Apertura Empate", "")),
+                "Apertura Visitante": str(row.get("Apertura Visitante", "")),
+                "Over 2.5": str(row.get("Over 2.5", "")),
+                "Under 2.5": str(row.get("Under 2.5", ""))
+            }
+            datos_sincronizados.append(partido_dict)
+            
+        return datos_sincronizados
+    except Exception as e:
+        st.error(f"Error al conectar con Google Sheets: {e}")
+        return None
+
+# ---------------------------------------------------------------------------
+# 0. ESTILOS VISUALES RESPONSIBOS Y FORMATO DE IMPRESIÓN LIMPIO
+# ---------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # 0. ESTILOS VISUALES RESPONSIVOS Y FORMATO DE IMPRESIÓN LIMPIO
