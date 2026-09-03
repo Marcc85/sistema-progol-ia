@@ -1670,6 +1670,29 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         width="stretch",
         key="grid_excel_v8_con_copas_y_amistosos"
     )
+    # --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL ---
+if grid_captura is not None and not grid_captura.empty:
+    partidos_procesados = []
+    for idx, row in grid_captura.iterrows():
+        nombre_liga_sel = row.get("Liga", "Liga MX (Mexico)")
+        league_id = LIGAS_IDS_API.get(nombre_liga_sel, 262)
+        
+        # Descarga los equipos oficiales de esa liga del mundo
+        dic_equipos = obtener_equipos_api(league_id)
+        
+        # Resuelve nombres escritos a IDs reales
+        id_local, real_local = resolver_id_equipo(row.get("Local", ""), dic_equipos)
+        id_visita, real_visita = resolver_id_equipo(row.get("Visita", ""), dic_equipos)
+        
+        # Guardamos la fila con los IDs listos para el motor matemático
+        row_dict = row.to_dict()
+        row_dict["id_liga"] = league_id
+        row_dict["id_local"] = id_local
+        row_dict["id_visita"] = id_visita
+        partidos_procesados.append(row_dict)
+    
+    # Actualizamos el estado con la potencia global lista
+    st.session_state["partidos_dinamicos"] = partidos_procesados
 
     st.write("")
     col_c1, col_c2, col_c3 = st.columns([2.5, 2.5, 3])
