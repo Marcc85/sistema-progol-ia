@@ -1711,6 +1711,19 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
             return team_id, nombre_api
             
     return None, ""
+        
+    nombre_limpio = str(nombre_buscado).lower().strip()
+    
+    # Coincidencia exacta
+    if nombre_limpio in diccionario_equipos:
+        return diccionario_equipos[nombre_limpio], nombre_limpio
+        
+    # Coincidencia parcial o fuzzy
+    for nombre_api, team_id in diccionario_equipos.items():
+        if nombre_limpio in nombre_api or nombre_api in nombre_limpio:
+            return team_id, nombre_api
+            
+    return None, ""
     
     nombre_limpio = nombre_escrito.lower().strip()
     
