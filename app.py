@@ -143,7 +143,7 @@ def cargar_catalogo_global_ligas():
         "Copa Sudamericana (South America)": 11
     }
     @st.cache_data(ttl=86400)
-    def obtener_equipos_api(league_id):
+def obtener_equipos_api(league_id):
     url = "https://v3.football.api-sports.io/teams"
     headers = {
         "x-rapidapi-key": st.secrets.get("API_KEY", "TU_API_KEY_AQUI"),
@@ -166,7 +166,7 @@ def cargar_catalogo_global_ligas():
         pass
         
     return diccionario_equipos
-
+    
 LIGAS_IDS_API = cargar_catalogo_global_ligas()
 OPCIONES_LIGAS = sorted(list(LIGAS_IDS_API.keys()))
 TABLA_EN_BLANCO = [
