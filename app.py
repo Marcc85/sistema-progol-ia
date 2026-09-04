@@ -165,8 +165,7 @@ def obtener_equipos_api(league_id):
     except Exception:
         pass
         
-    return diccionario_equipos
-    
+    return diccionario_equipos    
 LIGAS_IDS_API = cargar_catalogo_global_ligas()
 OPCIONES_LIGAS = sorted(list(LIGAS_IDS_API.keys()))
 TABLA_EN_BLANCO = [
