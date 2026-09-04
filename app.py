@@ -142,7 +142,7 @@ def cargar_catalogo_global_ligas():
         "Copa do Brasil (Brazil)": 73,
         "Copa Sudamericana (South America)": 11
     }
-    @st.cache_data(ttl=86400)
+@st.cache_data(ttl=86400)
 def obtener_equipos_api(league_id):
     url = "https://v3.football.api-sports.io/teams"
     headers = {
