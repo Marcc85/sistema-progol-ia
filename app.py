@@ -1695,7 +1695,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         key="grid_excel_v8_con_copas_y_amistosos"
     )
     def resolver_id_equipo(nombre_escrito, dic_equipos):
-    """Resuelve el nombre escrito a ID real usando coincidencia exacta y fuzzy matching."""
+        """Resuelve el nombre escrito a ID real usando coincidencia exacta y fuzzy matching."""
     if not nombre_escrito or not isinstance(nombre_escrito, str) or nombre_escrito.strip() in ["", "--"]:
         return None, ""
     
