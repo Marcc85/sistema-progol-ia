@@ -1697,7 +1697,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     def resolver_id_equipo(nombre_escrito, dic_equipos):
         """Resuelve el nombre escrito a ID real usando coincidencia exacta y fuzzy matching."""
     if not nombre_escrito or not isinstance(nombre_escrito, str) or nombre_escrito.strip() in ["", "--"]:
-        return None, ""
+    return None, ""
     
     nombre_limpio = nombre_escrito.lower().strip()
     
