@@ -1697,13 +1697,9 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     def resolver_id_equipo(nombre_buscado, diccionario_equipos):
     if not nombre_buscado or not diccionario_equipos:
         return None, ""
-        
     nombre_limpio = str(nombre_buscado).lower().strip()
-    
-    # Coincidencia exacta
     if nombre_limpio in diccionario_equipos:
         return diccionario_equipos[nombre_limpio], nombre_limpio
-        
     return None, nombre_limpio
         
     # Coincidencia parcial o fuzzy
