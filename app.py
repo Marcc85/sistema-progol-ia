@@ -105,7 +105,6 @@ st.markdown(
 ARCHIVO_DISCO = "progol_captura_v7.json"
 ARCHIVO_CACHE_API = "progol_bigdata_cache.json"
 
-# Función profesional: Descarga en automático CUALQUIER liga o copa del mundo desde la API-Sports
 @st.cache_data(ttl=86400)
 def cargar_catalogo_global_ligas():
     return {
@@ -177,11 +176,9 @@ def resolver_id_equipo(nombre_buscado, diccionario_equipos):
     
     nombre_limpio = limpiar_texto_equipo(nombre_buscado)
     
-    # 1. Coincidencia exacta limpia
     if nombre_limpio in diccionario_equipos:
         return diccionario_equipos[nombre_limpio], nombre_limpio
         
-    # 2. Coincidencia por alias predefinido automático
     alias_mapeo = {
         "america": "club america",
         "chivas": "guadalajara",
@@ -192,7 +189,6 @@ def resolver_id_equipo(nombre_buscado, diccionario_equipos):
     if nombre_buscado_norm in diccionario_equipos:
         return diccionario_equipos[nombre_buscado_norm], nombre_buscado_norm
 
-    # 3. Coincidencia flexible por subcadena automática
     for k, v in diccionario_equipos.items():
         if nombre_limpio in k or k in nombre_limpio or nombre_buscado_norm in k:
             return v, k
@@ -350,9 +346,6 @@ if "api_cache_xg" not in st.session_state:
 if "menu_activo" not in st.session_state:
     st.session_state["menu_activo"] = "📊 1. ANÁLISIS 1 (Excel)"
 
-# ------------------------------------------------------------------------------
-# 2. DICCIONARIO DE ALIAS Y MOTOR DINÁMICO DE BÚSQUEDA INTELIGENTE
-# ------------------------------------------------------------------------------
 ALIAS_EQUIPOS = {
     "manchester united": "Manchester United",
     "man utd": "Manchester United",
@@ -765,9 +758,6 @@ class MotorAPISportsUltra:
         except Exception:
             return pd.DataFrame()
 
-# ------------------------------------------------------------------------------
-# 3. FUNCIONES DE RESALTADO Y COMPARACIÓN DE EQUIPOS
-# ------------------------------------------------------------------------------
 def limpiar_nombre_equipo(nom):
     if not nom: return ""
     s = str(nom).lower().replace(".", "").strip()
@@ -858,9 +848,6 @@ def detectar_datos_duros(info_l, info_v, df_f1, df_f2, df_h2h):
 
     return insights
 
-# ------------------------------------------------------------------------------
-# 4. FÓRMULAS DE PROBABILIDAD, SMART MONEY Y CORRECCIÓN DIXON-COLES
-# ------------------------------------------------------------------------------
 def limpiar_y_convertir_momio(val):
     if val is None: return None
     val_str = str(val).replace("+", "").replace("$", "").replace(",", "").strip()
@@ -1042,9 +1029,6 @@ def procesar_fila_independiente(row):
 def procesar_tabla_completa(datos_raw):
     return pd.DataFrame([procesar_fila_independiente(r) for r in datos_raw])
 
-# ------------------------------------------------------------------------------
-# 5. ENCABEZADO Y BOTONERA
-# ------------------------------------------------------------------------------
 st.title("⚽ Centro de Mando Progol v4.0 Ultra")
 st.caption("Fórmulas Unificadas + Búsqueda Blindada por Liga/Copas/Amistosos + Interfaz Adaptable.")
 
@@ -1097,16 +1081,10 @@ if col_bolsa[0].button(modulos[8][0], type="primary" if st.session_state["menu_a
 
 st.divider()
 
-# ------------------------------------------------------------------------------
-# 6. CONTENIDO MODULAR CONDICIONAL
-# ------------------------------------------------------------------------------
-
-# MÓDULO 1: ANÁLISIS 1 (EXCEL)
 if st.session_state["menu_activo"] == "📊 1. ANÁLISIS 1 (Excel)":
     st.subheader("Tabla Maestra de Análisis Cuantitativo (14 Partidos)")
     st.dataframe(df_analisis, width="stretch", height=540)
 
-# MÓDULO 2: BIG DATA API-SPORTS LIVE
 elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
     st.subheader("🌐 Extracción Multitorneo en Vivo desde API-Sports Ultra")
     
@@ -1137,8 +1115,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         df_f2 = MotorAPISportsUltra.obtener_ultimos_partidos_reales_multitorneo(info_v["id"])
                         df_h2h = MotorAPISportsUltra.obtener_h2h(info_l["id"], info_v["id"])
 
-                        # Descargamos estadísticas divididas primero para xG preciso
-                        # (Determinamos la liga de contexto para los stats)
                         temp_lid_l = MotorAPISportsUltra.resolver_league_id(liga_contexto) or 262
                         temp_lid_v = temp_lid_l
                         stats_l = MotorAPISportsUltra.obtener_metricas_divididas(info_l["id"], temp_lid_l)
@@ -1161,7 +1137,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         else:
                             st.info("🟢 **RANGOS NORMALES:** No se detectan rachas consecutivas activas o anomalías históricas destacables.")
 
-                        # 1. TABLAS DE POSICIONES
                         st.divider()
                         tablas_l = MotorAPISportsUltra.obtener_todas_tablas_posiciones(info_l["id"], liga_contexto)
                         tablas_v = MotorAPISportsUltra.obtener_todas_tablas_posiciones(info_v["id"], liga_contexto)
@@ -1215,7 +1190,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                         st.dataframe(styled_df_v, width="stretch")
                                 else: st.caption(f"Sin tabla oficial registrada para {info_v['nombre']}.")
 
-                        # 2. MÉTRICAS DIVIDIDAS
                         st.divider()
                         st.subheader("📊 2. Rendimiento Dividido (Local Puro vs Visita Puro)")
                         st.caption("📌 Nota: Muestra el desempeño exclusivo en sus respectivos torneos oficiales vigentes.")
@@ -1243,7 +1217,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         ]
                         st.dataframe(pd.DataFrame(data_metrics), width="stretch")
 
-                        # 3. INERCIA MULTITORNEO
                         st.divider()
                         st.subheader("🔥 3. Inercia y Rachas Recientes Multitorneo")
                         col_f1, col_f2 = st.columns(2)
@@ -1259,7 +1232,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                 st.dataframe(df_f2[["Fecha", "Res", "Rival", "Score", "Torneo"]], width="stretch")
                             else: st.caption("Sin datos recientes.")
 
-                        # 4. SIMULACIÓN DIXON-COLES & POISSON
                         st.divider()
                         st.subheader("🎯 4. Marcadores Probables con Corrección Dixon-Coles")
                         pl_dc, pe_dc, pv_dc, top_m = calcular_poisson_dixon_coles(lambda_l, mu_v)
@@ -1278,7 +1250,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         st.subheader("Top 5 Marcadores Exactos")
                         st.dataframe(pd.DataFrame(top_m), width="stretch")
 
-                        # 5. DIAGNÓSTICO PARTIDO TRAMPA
                         st.divider()
                         st.subheader("⚠️ 5. Diagnóstico Algorítmico de PARTIDO TRAMPA")
                         m_v_raw = row_p.get("Momio Visitante", "200")
@@ -1308,9 +1279,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                                 f"💡 **En caso de jugarlo a Doble:** La combinación cuantitativa más fuerte es {doble_recomendado} (Combinando **{t1_nom}** de {t1_val}% + **{t2_nom}** de {t2_val}%)."
                             )
 
-                        # ------------------------------------------------------
-                        # 6. HISTORIAL H2H CON FILTRO DE SEDES (BLINDADO POR ID)
-                        # ------------------------------------------------------
                         st.divider()
                         st.subheader(f"📋 6. Historial Frente a Frente Multitorneo ({info_l['nombre']} vs {info_v['nombre']})")
                         if not df_h2h.empty:
@@ -1333,7 +1301,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         else:
                             st.warning("Sin historial H2H reciente registrado para estos dos clubes.")
 
-                        # 7. BAJAS
                         st.divider()
                         st.subheader("🏥 7. Reporte de Bajas y Lesionados")
                         st.caption("📌 Nota: Durante Fechas FIFA o recesos de liga, la API suspende el parte médico de clubes porque los jugadores están concentrados con selecciones nacionales.")
@@ -1358,7 +1325,6 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
     else:
         st.info("Ingresa partidos completos en el Módulo 8 (Captura) para consultar la Big Data de la API.")
 
-# MÓDULO 3: DETECTOR DE EMPATES
 elif st.session_state["menu_activo"] == "🤝 3. Detector de Empates":
     st.subheader("🤝 Partidos Identificados en ZONA DE EMPATE (Diferencia < 10% Y Prob. Empate ≥ 29%)")
     df_emp = df_analisis[df_analisis["Clasificación Partido"] == "ZONA DE EMPATE"]
@@ -1367,7 +1333,6 @@ elif st.session_state["menu_activo"] == "🤝 3. Detector de Empates":
     else:
         st.info("No hay partidos calificados en ZONA DE EMPATE bajo el criterio científico estricto actualmente.")
 
-# MÓDULO 4: DETECTOR DE TRAMPAS
 elif st.session_state["menu_activo"] == "🔥 4. Detector de Trampas":
     st.subheader("🔥 Partidos Clasificados como PARTIDO TRAMPA")
     df_trm = df_analisis[df_analisis["Clasificación Partido"] == "PARTIDO TRAMPA"]
@@ -1376,7 +1341,6 @@ elif st.session_state["menu_activo"] == "🔥 4. Detector de Trampas":
     else:
         st.info("No se detectan partidos trampa con los momios ingresados.")
 
-# MÓDULO 5: POISSON & DIXON-COLES
 elif st.session_state["menu_activo"] == "🎯 5. Método Poisson & Dixon-Coles":
     st.subheader("🎯 Simulación por Distribución de Dixon-Coles & Poisson (Sincronizada)")
     if partidos_validos:
@@ -1431,7 +1395,6 @@ elif st.session_state["menu_activo"] == "🎯 5. Método Poisson & Dixon-Coles":
             st.subheader("Top 5 Marcadores Exactos Probables")
             st.dataframe(pd.DataFrame(top_m), width="stretch")
 
-# MÓDULO 6: QUINIELA MÚLTIPLE (7/8 DOBLES)
 elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)":
     st.subheader("🎫 Configuración de Volante Múltiple (Quiniela Directa Progol)")
     st.caption("Asignación de coberturas dobles según dificultad de casillero y certeza del favorito.")
@@ -1540,9 +1503,6 @@ elif st.session_state["menu_activo"] == "🎫 6. Quiniela Múltiple (7/8 Dobles)
         texto_wp += f"{item['#']}. {item['Partido']} ➔ [{item['pronostico']}]\n"
     st.code(texto_wp, language="text")
 
-# ------------------------------------------------------------------------------
-# MÓDULO 7: MATRIZ REDUCIDA CALIBRADA (CONFIGURABLE: 7 U 8 DOBLES)
-# ------------------------------------------------------------------------------
 elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
     st.subheader("🎰 Generador de Matriz Reducida Optimizada")
     st.caption("Distribución matemática reducida de 12 combinaciones para optimizar el volante cubriendo fijos inamovibles y dobles estratégicos.")
@@ -1692,9 +1652,6 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
     else:
         st.info("Ingresa los 14 partidos y momios en el Módulo 8 para visualizar los 12 boletos generados.")
 
-# ------------------------------------------------------------------------------
-# MÓDULO 8: CAPTURA Y EDICIÓN (CON SISTEMA ANTI-APAGÓN)
-# ------------------------------------------------------------------------------
 elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
     st.subheader("Edición de Quiniela Manual (Celda a Celda)")
     st.info("💡 Captura momios y líneas. Al terminar de capturar, usa los botones de respaldo de abajo para proteger tus datos contra reinicios del servidor.")
@@ -1741,25 +1698,52 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         key="grid_excel_v8_con_copas_y_amistosos"
     )
 
-# --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL ---
-if 'grid_captura' in locals() and grid_captura is not None and not grid_captura.empty:
+# --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL & AUTOCOMPLETADO INTELIGENTE ---
+if 'grid_captura' in globals() and grid_captura is not None and not grid_captura.empty:
     partidos_procesados = []
+    resumen_traduccion = []
+    
     for idx, row in grid_captura.iterrows():
         nombre_liga_sel = row.get("Liga", "Liga MX (Mexico)")
         league_id = LIGAS_IDS_API.get(nombre_liga_sel, 262)
         
+        loc_input = str(row.get("Local", "")).strip()
+        vis_input = str(row.get("Visita", "")).strip()
+        
         dic_equipos = obtener_equipos_api(league_id)
         
-        id_local, real_local = resolver_id_equipo(row.get("Local", ""), dic_equipos)
-        id_visita, real_visita = resolver_id_equipo(row.get("Visita", ""), dic_equipos)
+        id_local, real_local = resolver_id_equipo(loc_input, dic_equipos)
+        id_visita, real_visita = resolver_id_equipo(vis_input, dic_equipos)
         
+        if (loc_input and not id_local) or (vis_input and not id_visita):
+            if loc_input and not id_local:
+                res_g_l = MotorAPISportsUltra.buscar_equipo_dinamico(loc_input, nombre_liga_sel)
+                if res_g_l:
+                    id_local = res_g_l["id"]
+                    real_local = res_g_l["nombre"]
+            if vis_input and not id_visita:
+                res_g_v = MotorAPISportsUltra.buscar_equipo_dinamico(vis_input, nombre_liga_sel)
+                if res_g_v:
+                    id_visita = res_g_v["id"]
+                    real_visita = res_g_v["nombre"]
+
         row_dict = row.to_dict()
         row_dict["id_liga"] = league_id
         row_dict["id_local"] = id_local
         row_dict["id_visita"] = id_visita
         partidos_procesados.append(row_dict)
+        
+        if loc_input or vis_input:
+            st_l_str = f"✅ {loc_input} ➔ **{real_local}** (ID: {id_local})" if id_local else f"⚠️ {loc_input} (No localizado)"
+            st_v_str = f"✅ {vis_input} ➔ **{real_visita}** (ID: {id_visita})" if id_visita else f"⚠️ {vis_input} (No localizado)"
+            resumen_traduccion.append(f"Casilla #{idx+1}: {st_l_str} vs {st_v_str}")
     
     st.session_state["partidos_dinamicos"] = partidos_procesados
+    
+    if resumen_traduccion:
+        with st.expander("🔍 Estado de Autocompletado y Traducción Automática en Tiempo Real", expanded=False):
+            for rt in resumen_traduccion:
+                st.write(rt)
 
     st.write("")
     col_c1, col_c2, col_c3 = st.columns([2.5, 2.5, 3])
