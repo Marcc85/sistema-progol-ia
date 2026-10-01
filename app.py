@@ -177,12 +177,24 @@ def resolver_id_equipo(nombre_buscado, diccionario_equipos):
     
     nombre_limpio = limpiar_texto_equipo(nombre_buscado)
     
+    # 1. Coincidencia exacta limpia
     if nombre_limpio in diccionario_equipos:
         return diccionario_equipos[nombre_limpio], nombre_limpio
         
-    # Búsqueda parcial flexible por si hay pequeñas variaciones
+    # 2. Coincidencia por alias predefinido automático
+    alias_mapeo = {
+        "america": "club america",
+        "chivas": "guadalajara",
+        "pumas": "unam",
+        "cruz azul": "cruz azul"
+    }
+    nombre_buscado_norm = alias_mapeo.get(nombre_limpio, nombre_limpio)
+    if nombre_buscado_norm in diccionario_equipos:
+        return diccionario_equipos[nombre_buscado_norm], nombre_buscado_norm
+
+    # 3. Coincidencia flexible por subcadena automática
     for k, v in diccionario_equipos.items():
-        if nombre_limpio in k or k in nombre_limpio:
+        if nombre_limpio in k or k in nombre_limpio or nombre_buscado_norm in k:
             return v, k
             
     return None, nombre_limpio
@@ -438,7 +450,7 @@ class MotorAPISportsUltra:
         if not nombre_equipo or not nombre_equipo.strip():
             return None
         
-        raw_clean = nombre_equipo.strip().lower()
+        raw_clean = limpiar_texto_equipo(nombre_equipo)
         query_search = ALIAS_EQUIPOS.get(raw_clean, nombre_equipo.strip())
         league_id = cls.resolver_league_id(liga_nombre)
         femenil_mode = cls.es_liga_femenil(liga_nombre)
@@ -453,12 +465,11 @@ class MotorAPISportsUltra:
                     if data:
                         for item in data:
                             t = item.get("team", {})
-                            t_name = str(t.get("name", "")).lower()
-                            if (t_name == raw_clean or 
-                                t_name == query_search.lower() or 
-                                raw_clean in t_name or 
-                                query_search.lower() in t_name or
-                                t_name in raw_clean):
+                            t_name_clean = limpiar_texto_equipo(t.get("name", ""))
+                            if (t_name_clean == raw_clean or 
+                                t_name_clean == limpiar_texto_equipo(query_search) or 
+                                raw_clean in t_name_clean or 
+                                t_name_clean in raw_clean):
                                 return {
                                     "id": int(t.get("id")),
                                     "nombre": t.get("name"),
@@ -482,7 +493,7 @@ class MotorAPISportsUltra:
                 for item in data:
                     t = item.get("team", {})
                     pais = str(t.get("country", "")).lower()
-                    t_name = str(t.get("name", "")).lower()
+                    t_name_clean = limpiar_texto_equipo(t.get("name", ""))
                     score = 0
 
                     if pais in ["mexico", "england", "spain", "italy", "germany", "france", "argentina", "brazil", "portugal", "netherlands", "belgium", "usa", "canada", "chile"]:
@@ -490,11 +501,11 @@ class MotorAPISportsUltra:
                     elif "national" in pais or not pais: score += 50
                     else: score -= 100
 
-                    if t_name == raw_clean or t_name == q.lower(): score += 250
-                    elif raw_clean in t_name or q.lower() in t_name: score += 120
+                    if t_name_clean == raw_clean or t_name_clean == limpiar_texto_equipo(q): score += 250
+                    elif raw_clean in t_name_clean or limpiar_texto_equipo(q) in t_name_clean: score += 120
                     else: score += 20
 
-                    es_equipo_w = any(kw in t_name for kw in ["women", "femenil", "feminino", "feminina", " w", "-w", "(w)"]) or t_name.endswith(" w")
+                    es_equipo_w = any(kw in t_name_clean for kw in ["women", "femenil", "feminino", "feminina", " w", "-w", "(w)"]) or t_name_clean.endswith(" w")
 
                     if femenil_mode:
                         if es_equipo_w: score += 400
@@ -502,9 +513,9 @@ class MotorAPISportsUltra:
                     else:
                         if es_equipo_w: score -= 600
 
-                    if any(w in t_name for w in ["bold", " ii", " b", "youth", "sub", "u23", "u21", "u20", "u19", "reserve", "academy"]):
+                    if any(w in t_name_clean for w in ["bold", " ii", " b", "youth", "sub", "u23", "u21", "u20", "u19", "reserve", "academy"]):
                         score -= 400
-                    if "-la-" in t_name or "-le-" in t_name or "-en-" in t_name:
+                    if "-la-" in t_name_clean or "-le-" in t_name_clean or "-en-" in t_name_clean:
                         score -= 350
 
                     candidatos.append((score, t))
@@ -1798,5 +1809,3 @@ if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado
                 st.warning("Intenta de novo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
         else:
             st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
-
-
