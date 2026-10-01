@@ -1694,36 +1694,14 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         width="stretch",
         key="grid_excel_v8_con_copas_y_amistosos"
     )
-    def resolver_id_equipo(nombre_buscado, diccionario_equipos):
-        if not nombre_buscado or not diccionario_equipos:
-            return None, ""
-        nombre_limpio = str(nombre_buscado).lower().strip()
-        if nombre_limpio in diccionario_equipos:
-            return diccionario_equipos[nombre_limpio], nombre_limpio
-        return None, nombre_limpio
-    
-    # 1. Búsqueda exacta
-    if nombre_limpio in dic_equipos:
-        return dic_equipos[nombre_limpio], nombre_limpio
-        
-    # 2. Búsqueda por similitud con thefuzz (si está disponible)
-    try:
-        from thefuzz import process
-        nombres_api = list(dic_equipos.keys())
-        if nombres_api:
-            match, score = process.extractOne(nombre_limpio, nombres_api)
-            if score >= 55:
-                return dic_equipos[match], match
-    except Exception:
-        pass
-        
-    # 3. Búsqueda parcial por subcadena
-    for nombre_api, tid in dic_equipos.items():
-        if nombre_limpio in nombre_api or nombre_api in nombre_limpio:
-            return tid, nombre_api
-            
-    return None, nombre_escrito
-    # --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL ---
+  def resolver_id_equipo(nombre_buscado, diccionario_equipos):
+    if not nombre_buscado or not diccionario_equipos:
+        return None, ""
+    nombre_limpio = str(nombre_buscado).lower().strip()
+    if nombre_limpio in diccionario_equipos:
+        return diccionario_equipos[nombre_limpio], nombre_limpio
+    return None, nombre_limpio  
+# --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL ---
 if grid_captura is not None and not grid_captura.empty:
     partidos_procesados = []
     for idx, row in grid_captura.iterrows():
