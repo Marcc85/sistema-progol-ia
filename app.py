@@ -1799,4 +1799,4 @@ if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado
         else:
             st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
 app.py
-Mostrando app.py.
+
