@@ -1702,7 +1702,7 @@ def resolver_id_equipo(nombre_buscado, diccionario_equipos):
         return diccionario_equipos[nombre_limpio], nombre_limpio
     return None, nombre_limpio  
 # --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL ---
-if grid_captura is not None and not grid_captura.empty:
+if 'grid_captura' in globals() and grid_captura is not None and not grid_captura.empty:
     partidos_procesados = []
     for idx, row in grid_captura.iterrows():
         nombre_liga_sel = row.get("Liga", "Liga MX (Mexico)")
