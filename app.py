@@ -1695,15 +1695,16 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         key="grid_excel_v8_con_copas_y_amistosos"
     )
     def resolver_id_equipo(nombre_buscado, diccionario_equipos):
-        if not nombre_buscado or not diccionario_equipos:
-                return None, ""
-   
-    
-        nombre_limpio = str(nombre_buscado).lower().strip()
+    if not nombre_buscado or not diccionario_equipos:
+        return None, ""
+        
+    nombre_limpio = str(nombre_buscado).lower().strip()
     
     # Coincidencia exacta
     if nombre_limpio in diccionario_equipos:
         return diccionario_equipos[nombre_limpio], nombre_limpio
+        
+    return None, nombre_limpio
         
     # Coincidencia parcial o fuzzy
     for nombre_api, team_id in diccionario_equipos.items():
