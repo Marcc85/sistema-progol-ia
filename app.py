@@ -5,6 +5,7 @@ import json
 import os
 import math
 import io
+import unicodedata
 
 st.set_page_config(
     page_title="Centro de Mando Progol v4.0 Ultra",
@@ -51,9 +52,6 @@ def sincronizar_google_sheet(url_sheet):
 # 0. ESTILOS VISUALES RESPONSIBOS Y FORMATO DE IMPRESIÓN LIMPIO
 # ---------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------
-# 0. ESTILOS VISUALES RESPONSIVOS Y FORMATO DE IMPRESIÓN LIMPIO
-# ------------------------------------------------------------------------------
 st.markdown(
     """
     <style>
@@ -107,9 +105,6 @@ st.markdown(
 ARCHIVO_DISCO = "progol_captura_v7.json"
 ARCHIVO_CACHE_API = "progol_bigdata_cache.json"
 
-import streamlit as st
-import requests
-
 # Función profesional: Descarga en automático CUALQUIER liga o copa del mundo desde la API-Sports
 @st.cache_data(ttl=86400)
 def cargar_catalogo_global_ligas():
@@ -131,6 +126,7 @@ def cargar_catalogo_global_ligas():
         "Copa Chile (Chile)": 266,
         "Supercopa de Chile (Chile)": 267,
         "Amistosos / Club Friendlies (World)": 667,
+        "Amistosos Internacionales": 10,
         "FA Cup (England)": 45,
         "EFL Cup (England)": 48,
         "Championship (England)": 40,
@@ -142,6 +138,14 @@ def cargar_catalogo_global_ligas():
         "Copa do Brasil (Brazil)": 73,
         "Copa Sudamericana (South America)": 11
     }
+
+def limpiar_texto_equipo(texto):
+    if not texto:
+        return ""
+    nfkd_form = unicodedata.normalize('NFKD', str(texto))
+    solo_ascii = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    return solo_ascii.lower().strip()
+
 @st.cache_data(ttl=86400)
 def obtener_equipos_api(league_id):
     url = "https://v3.football.api-sports.io/teams"
@@ -161,11 +165,28 @@ def obtener_equipos_api(league_id):
                 team_name = team_info.get("name")
                 team_id = team_info.get("id")
                 if team_name and team_id:
-                    diccionario_equipos[team_name.lower().strip()] = team_id
+                    diccionario_equipos[limpiar_texto_equipo(team_name)] = team_id
     except Exception:
         pass
         
     return diccionario_equipos    
+
+def resolver_id_equipo(nombre_buscado, diccionario_equipos):
+    if not nombre_buscado or not diccionario_equipos:
+        return None, ""
+    
+    nombre_limpio = limpiar_texto_equipo(nombre_buscado)
+    
+    if nombre_limpio in diccionario_equipos:
+        return diccionario_equipos[nombre_limpio], nombre_limpio
+        
+    # Búsqueda parcial flexible por si hay pequeñas variaciones
+    for k, v in diccionario_equipos.items():
+        if nombre_limpio in k or k in nombre_limpio:
+            return v, k
+            
+    return None, nombre_limpio
+
 LIGAS_IDS_API = cargar_catalogo_global_ligas()
 OPCIONES_LIGAS = sorted(list(LIGAS_IDS_API.keys()))
 TABLA_EN_BLANCO = [
@@ -355,8 +376,10 @@ ALIAS_EQUIPOS = {
     "kv mechelen": "Mechelen",
     "st lieja": "Standard Liege",
     "america": "Club America",
+    "club america": "Club America",
     "tigres": "Tigres UANL",
     "chivas": "Guadalajara",
+    "guadalajara": "Guadalajara",
     "pumas": "UNAM Pumas",
     "cruz azul": "Cruz Azul",
     "atlas": "Atlas",
@@ -389,7 +412,7 @@ class MotorAPISportsUltra:
 
     @classmethod
     def _get_headers(cls):
-        api_key = st.secrets.get("api_sports", {}).get("api_key", "6974d8db01eb5eeb347c509793afe7cc")
+        api_key = st.secrets.get("api_sports", {}).get("api_key", st.secrets.get("API_KEY", "6974d8db01eb5eeb347c509793afe7cc"))
         return {"x-apisports-key": api_key}
 
     @classmethod
@@ -1371,7 +1394,7 @@ elif st.session_state["menu_activo"] == "🎯 5. Método Poisson & Dixon-Coles":
                 st.caption("Ajuste Dixon-Coles")
             with col_xg3: 
                 st.metric(f"✈️ Gana {vis_name}", f"{pv_dc}%")
-                st.caption(f"{mu_v:.2f} xG Esperados")
+                st.caption(f"{xg_visita:.2f} xG Esperados")
 
             st.divider()
             st.subheader("Top 5 Marcadores Exactos Probables")
@@ -1493,7 +1516,6 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
     st.subheader("🎰 Generador de Matriz Reducida Optimizada")
     st.caption("Distribución matemática reducida de 12 combinaciones para optimizar el volante cubriendo fijos inamovibles y dobles estratégicos.")
 
-    # Selector de 7 u 8 dobles
     cant_dobles_matriz = st.radio(
         "Configura la cantidad de Dobles para la Matriz:",
         [7, 8],
@@ -1503,7 +1525,6 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
     )
     cant_fijos_matriz = 14 - cant_dobles_matriz
 
-    # Matrices matemáticas reducidas estándar de 12 columnas (0 = Opción Principal, 1 = Cobertura)
     MATRIZ_7_DOBLES = [
         [0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 1, 1, 1, 1],
@@ -1550,7 +1571,6 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
         
         p_nombre = f"{loc} vs {vis}" if loc and vis else f"Casilla {num}"
 
-        # Regla del -140 para fijos
         es_fijo_l = ml is not None and ml <= -140
         es_fijo_v = mv is not None and mv <= -140
 
@@ -1566,10 +1586,8 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
             op1, op2 = "2", "2"
         else:
             tipo = "DOBLE"
-            # Criterio A: Partido abierto (Over negativo y Empate >= +265) -> Doble 1-2
             if ov is not None and ov < 0 and me is not None and me >= 265:
                 op1, op2 = "1", "2"
-            # Criterio B: Partido cerrado (Under negativo o Empate <= +215) -> Doble con Empate
             elif (und is not None and und < 0) or (me is not None and me <= 215):
                 if ml is not None and mv is not None and ml < mv:
                     op1, op2 = "1", "X"
@@ -1582,18 +1600,15 @@ elif st.session_state["menu_activo"] == "🎰 7. Matriz Reducida":
             "#": num, "Partido": p_nombre, "Tipo": tipo, "Op1": op1, "Op2": op2, "Score": score_firmeza
         })
 
-    # Balanceador exacto configurable de 7 a 8 dobles
     candidatos_dobles = [c for c in clasificados if c["Tipo"] == "DOBLE"]
     candidatos_fijos = [c for c in clasificados if c["Tipo"] == "FIJO"]
 
     if len(candidatos_dobles) > cant_dobles_matriz:
-        # Si sobran dobles, los de menor incertidumbre se convierten a fijos
         candidatos_dobles.sort(key=lambda x: x["Score"], reverse=True)
         transferir = candidatos_dobles[:(len(candidatos_dobles) - cant_dobles_matriz)]
         for t in transferir:
             t["Tipo"] = "FIJO"
     elif len(candidatos_dobles) < cant_dobles_matriz:
-        # Si faltan dobles, los fijos menos contundentes se cubren con doble
         candidatos_fijos.sort(key=lambda x: x["Score"])
         transferir = candidatos_fijos[:(cant_dobles_matriz - len(candidatos_dobles))]
         for t in transferir:
@@ -1673,7 +1688,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         ),
         "Local": st.column_config.TextColumn(
             "Local",
-            help="Copia y pega aquí el equipo local tal como viene en tu quiniela o casino",
+            help="Copia y pega aquí el equipo local",
             required=True,
         ),
         "Visita": st.column_config.TextColumn(
@@ -1683,46 +1698,36 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         ),
             "Over 2.5": st.column_config.TextColumn(
                 "Más 2.5 (Over)",
-                help="Momio para Más de 2.5 goles (ej: -150 o +120)"
+                help="Momio para Más de 2.5 goles"
             ),
             "Under 2.5": st.column_config.TextColumn(
                 "Menos 2.5 (Under)",
-                help="Momio para Menos de 2.5 goles (ej: -160 o +135)"
+                help="Momio para Menos de 2.5 goles"
             )
         },
         num_rows="fixed",
         width="stretch",
         key="grid_excel_v8_con_copas_y_amistosos"
     )
-def resolver_id_equipo(nombre_buscado, diccionario_equipos):
-    if not nombre_buscado or not diccionario_equipos:
-        return None, ""
-    nombre_limpio = str(nombre_buscado).lower().strip()
-    if nombre_limpio in diccionario_equipos:
-        return diccionario_equipos[nombre_limpio], nombre_limpio
-    return None, nombre_limpio  
+
 # --- PUENTE DE TRADUCCIÓN DINÁMICA GLOBAL ---
-if 'grid_captura' in globals() and grid_captura is not None and not grid_captura.empty:
+if 'grid_captura' in locals() and grid_captura is not None and not grid_captura.empty:
     partidos_procesados = []
     for idx, row in grid_captura.iterrows():
         nombre_liga_sel = row.get("Liga", "Liga MX (Mexico)")
         league_id = LIGAS_IDS_API.get(nombre_liga_sel, 262)
         
-        # Descarga los equipos oficiales de esa liga del mundo
         dic_equipos = obtener_equipos_api(league_id)
         
-        # Resuelve nombres escritos a IDs reales
         id_local, real_local = resolver_id_equipo(row.get("Local", ""), dic_equipos)
         id_visita, real_visita = resolver_id_equipo(row.get("Visita", ""), dic_equipos)
         
-        # Guardamos la fila con los IDs listos para el motor matemático
         row_dict = row.to_dict()
         row_dict["id_liga"] = league_id
         row_dict["id_local"] = id_local
         row_dict["id_visita"] = id_visita
         partidos_procesados.append(row_dict)
     
-    # Actualizamos el estado con la potencia global lista
     st.session_state["partidos_dinamicos"] = partidos_procesados
 
     st.write("")
@@ -1743,9 +1748,9 @@ if 'grid_captura' in globals() and grid_captura is not None and not grid_captura
             st.session_state["api_cache_xg"] = {}
             guardar_cache_api({})
             st.rerun()
+
 import random
 def generar_boletos_bolsa_grande(n_boletos, df_partidos):
-    """Genera N boletos con máximo 4 empates y de 2 a 3 sorpresas."""
     boletos_lista = []
     intentos = 0
     
@@ -1790,48 +1795,8 @@ if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado
                 for i, bol in enumerate(boletos_resultado, 1):
                     st.write(f"Boleto {i}: {bol}")
             else:
-                st.warning("Intenta de nuevo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
+                st.warning("Intenta de novo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
         else:
             st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
-            
-
-
-def limpiar_texto_equipo(texto):
-    """Normaliza el texto para comparar sin acentos ni mayúsculas."""
-    if not isinstance(texto, str):
-        return ""
-    nfkd = unicodedata.normalize('NFKD', texto)
-    return "".join([c for c in nfkd if not unicodedata.combining(c)]).lower().strip()
-
-@st.cache_data(ttl=3600)
-def obtener_equipos_api(league_id, temporada=2026):
-    """Descarga el catálogo oficial de equipos para una liga y temporada específica."""
-    url = "https://v3.football.api-sports.io/teams"
-    headers = {
-        "x-rapidapi-key": st.secrets.get("API_KEY", "TU_API_KEY_AQUI"),
-        "x-rapidapi-host": "v3.football.api-sports.io"
-    }
-    params = {"league": league_id, "season": temporada}
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json().get("response", [])
-            return {item["team"]["name"]: item["team"]["id"] for item in data}
-    except Exception as e:
-        st.error(f"Error al obtener equipos de la API: {e}")
-    return {}
-
-def resolver_id_equipo(nombre_capturado, diccionario_equipos_api):
-    """Busca mediante coincidencia difusa el ID oficial del equipo."""
-    nombres_oficiales = list(diccionario_equipos_api.keys())
-    if not nombres_oficiales:
-        return None, nombre_capturado
-    
-    nombres_limpios = {limpiar_texto_equipo(k): k for k in nombres_oficiales}
-    mejor_match, score = process.extractOne(limpiar_texto_equipo(nombre_capturado), list(nombres_limpios.keys()))
-    
-    if score > 70:
-        nombre_real = nombres_limpios[mejor_match]
-        return diccionario_equipos_api[nombre_real], nombre_real
-        
-    return None, nombre_capturado
+app.py
+Mostrando app.py.
