@@ -792,21 +792,29 @@ def resaltar_participantes(df_tab, eq_l_name, eq_v_name):
         return [''] * len(row)
     return df_tab.style.apply(color_row, axis=1)
 
-def calcular_xg_multitorneo_real(df_f1, df_f2):
-    if not df_f1.empty and "gf" in df_f1.columns:
+def calcular_xg_multitorneo_real(stats_l, stats_v, df_f1, df_f2):
+    home_stats = stats_l.get("local", {}) if stats_l else {}
+    away_stats = stats_v.get("visita", {}) if stats_v else {}
+    
+    gf_l = home_stats.get("avg_gf", 0.0)
+    gc_l = home_stats.get("avg_gc", 0.0)
+    gf_v = away_stats.get("avg_gf", 0.0)
+    gc_v = away_stats.get("avg_gc", 0.0)
+    
+    if gf_l == 0.0 and gc_l == 0.0 and not df_f1.empty and "gf" in df_f1.columns:
         gf_l = df_f1["gf"].mean()
         gc_l = df_f1["gc"].mean()
-    else:
-        gf_l, gc_l = 1.1, 1.2
+    if gf_l == 0.0: gf_l = 1.1
+    if gc_l == 0.0: gc_l = 1.2
 
-    if not df_f2.empty and "gf" in df_f2.columns:
+    if gf_v == 0.0 and gc_v == 0.0 and not df_f2.empty and "gf" in df_f2.columns:
         gf_v = df_f2["gf"].mean()
         gc_v = df_f2["gc"].mean()
-    else:
-        gf_v, gc_v = 1.0, 1.1
+    if gf_v == 0.0: gf_v = 1.0
+    if gc_v == 0.0: gc_v = 1.1
 
-    lambda_l = max(0.6, round((gf_l + gc_v) / 2.0, 2))
-    mu_v = max(0.6, round((gf_v + gc_l) / 2.0, 2))
+    lambda_l = max(0.5, round((gf_l + gc_v) / 2.0, 2))
+    mu_v = max(0.5, round((gf_v + gc_l) / 2.0, 2))
 
     return lambda_l, mu_v
 
@@ -1129,7 +1137,14 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         df_f2 = MotorAPISportsUltra.obtener_ultimos_partidos_reales_multitorneo(info_v["id"])
                         df_h2h = MotorAPISportsUltra.obtener_h2h(info_l["id"], info_v["id"])
 
-                        lambda_l, mu_v = calcular_xg_multitorneo_real(df_f1, df_f2)
+                        # Descargamos estadísticas divididas primero para xG preciso
+                        # (Determinamos la liga de contexto para los stats)
+                        temp_lid_l = MotorAPISportsUltra.resolver_league_id(liga_contexto) or 262
+                        temp_lid_v = temp_lid_l
+                        stats_l = MotorAPISportsUltra.obtener_metricas_divididas(info_l["id"], temp_lid_l)
+                        stats_v = MotorAPISportsUltra.obtener_metricas_divididas(info_v["id"], temp_lid_v)
+
+                        lambda_l, mu_v = calcular_xg_multitorneo_real(stats_l, stats_v, df_f1, df_f2)
 
                         st.session_state["api_cache_xg"][partido_sel] = {
                             "xg_l": lambda_l, "xg_v": mu_v,
@@ -1321,17 +1336,22 @@ elif st.session_state["menu_activo"] == "🌐 2. Big Data API-Sports (Live)":
                         # 7. BAJAS
                         st.divider()
                         st.subheader("🏥 7. Reporte de Bajas y Lesionados")
+                        st.caption("📌 Nota: Durante Fechas FIFA o recesos de liga, la API suspende el parte médico de clubes porque los jugadores están concentrados con selecciones nacionales.")
                         col_b1, col_b2 = st.columns(2)
                         with col_b1:
                             st.write(f"**Bajas en {info_l['nombre']}**")
                             df_b1 = MotorAPISportsUltra.obtener_bajas(info_l["id"])
-                            if not df_b1.empty: st.dataframe(df_b1, width="stretch")
-                            else: st.caption("Sin reporte oficial de bajas.")
+                            if not df_b1.empty: 
+                                st.dataframe(df_b1, width="stretch")
+                            else: 
+                                st.info(f"ℹ️ Sin reporte activo (Posible pausa por Fecha FIFA / Sin lesionados registrados en liga para {info_l['nombre']}).")
                         with col_b2:
                             st.write(f"**Bajas en {info_v['nombre']}**")
                             df_b2 = MotorAPISportsUltra.obtener_bajas(info_v["id"])
-                            if not df_b2.empty: st.dataframe(df_b2, width="stretch")
-                            else: st.caption("Sin reporte oficial de bajas.")
+                            if not df_b2.empty: 
+                                st.dataframe(df_b2, width="stretch")
+                            else: 
+                                st.info(f"ℹ️ Sin reporte activo (Posible pausa por Fecha FIFA / Sin lesionados registrados en liga para {info_v['nombre']}).")
 
                     else:
                         st.error(f"⚠️ No se encontró alguno de los equipos en API-Sports para la liga {liga_contexto}. Revisa la ortografía.")
@@ -1809,3 +1829,4 @@ if st.session_state["menu_activo"] == "🔥 9. Generador Bolsa Grande (Acumulado
                 st.warning("Intenta de novo o ajusta ligeramente tus parámetros para encontrar combinaciones exactas.")
         else:
             st.info("Por favor, ejecuta primero tu análisis base (Módulo 1) para cargar los partidos.")
+
