@@ -1694,7 +1694,7 @@ elif st.session_state["menu_activo"] == "📋 8. CAPTURA Y EDICIÓN":
         width="stretch",
         key="grid_excel_v8_con_copas_y_amistosos"
     )
-  def resolver_id_equipo(nombre_buscado, diccionario_equipos):
+    def resolver_id_equipo(nombre_buscado, diccionario_equipos):
     if not nombre_buscado or not diccionario_equipos:
         return None, ""
    
